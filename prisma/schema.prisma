@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id      Int      @id @default(autoincrement())
+  name String @db.VarChar(25)
+  userImg String @db.VarChar(500)
+  email String @db.VarChar(255)
+  emailVerifiedAt DateTime? 
+  password   String   @db.VarChar(255)
+  isAdmin Boolean  @default(false)
+  introduction String? @db.VarChar(255)
+  likes PostLike[]
+  posts Post[]
+  followers Follows[] @relation("follower")
+  followings Follows[] @relation("following")
+  notifications     Notification[]
+  notificationsTriggered Notification[] @relation("triggeredBy")
+  sentMessages   Message[]
+  conversationsParticipatedIn ConversationParticipant[]
+  @@unique([name, email])
+
+}
+
+
+model Follows {
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("following", fields: [followingId], references: [id])
+  followingId Int
+
+  @@id([followerId, followingId])
+}
+
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post    Post?     @relation("PostReply", fields: [replyToId], references: [id])
+  replyToId Int?
+  replies Post[]    @relation("PostReply")
+  text     String   @db.VarChar(200)
+  img String @db.VarChar(500)
+  user    User     @relation(fields: [userId], references: [id])
+  userId  Int 
+  likes PostLike[]
+  notifications Notification[]
+
+}
+
+
+
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  post    Post     @relation(fields: [postId], references: [id])
+  postId  Int
+  user    User     @relation(fields: [userId], references: [id])
+  userId  Int
+  @@unique([postId, userId]) 
+}
+
+enum NotificationType {
+  Like
+  FOLLOW
+  REPLY
+  MESSAGE
+}
+
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        NotificationType   
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int      
+  triggeredBy User     @relation("triggeredBy", fields: [triggeredById], references: [id])
+  triggeredById Int    
+  post        Post?    @relation(fields: [postId], references: [id])
+  postId      Int?     
+  read        Boolean  @default(false) 
+  @@index([userId]) 
+}
+
+model Conversation {
+  id          Int    @id @default(autoincrement())
+  messages    Message[]
+  participants ConversationParticipant[]
+}
+
+model ConversationParticipant {
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  text           String
+  createdAt      DateTime     @default(now())
+  conversation    Conversation     @relation(fields: [conversationId], references: [id])
+  conversationId  Int
+  senderId       Int
+  sender         User         @relation(fields: [senderId], references: [id])
+  
+}
