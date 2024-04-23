@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 import { Request, Response } from "express";
 
@@ -12,35 +13,44 @@ import prisma from "../lib/db";
 // ログイン機能
 router.post("/login", async (req: Request, res: Response) => {
   try {
-    const { id, uid } = req.body;
-    console.log("/login", { id, uid });
+    const { email, password } = req.body;
+    console.log("/login", { email, password });
 
-    if (!id && !uid) {
-      return res.status(400).json({ error: "id or uid is required" });
+    if (!email) {
+      return res.status(400).json({ error: "email is required" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: "password is required" });
     }
     const whereParam: { [key: string]: any } = {};
-    //idが指定されていればパラメータに設定
-    if (id) {
-      whereParam.id = parseInt(id as string);
-    }
 
-    //uidが指定されていればパラメータに設定
-    if (uid) {
-      whereParam.uid = uid;
-    }
+    //emailが指定されていればパラメータに設定
+    whereParam.email = email;
 
-    const users = await prisma.user.findMany({
-      where: whereParam,
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
     });
-    if (users.length > 0) {
-      // ユーザーが認証された場合、JWTを生成
-      const token = jwt.sign(users[0], process.env.JWT_SECRET, {
-        expiresIn: "7d",
-      });
 
-      return res.status(200).json({ token, user: users[0] });
+    if (user) {
+      const passwordValid = await bcrypt.compare(password, user.password);
+      if (passwordValid) {
+        // JWT 生成と応答
+        // ユーザーが認証された場合、JWTを生成
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "7d",
+        });
+        const { password, ...userWithoutPass } = user;
+
+        return res.status(200).json({ token, user: userWithoutPass });
+      } else {
+        // 認証失敗の応答
+        return res.status(401).json({ errot: "Invalid password" });
+      }
     } else {
-      return res.status(500).json({ error: "Error searching users" });
+      return res.status(401).json({ errot: "Invalid user" });
     }
   } catch (error) {
     console.error(error);
@@ -49,123 +59,123 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 // ユーザー登録機能
-router.post("/register", async (req: Request, res: Response) => {
-  try {
-    const { uid, name, userImg, isAdmin, introduction } = req.body;
-    if (!uid || !name) {
-      res.status(400).send({ error: "uid and name are required" });
-      return;
-    }
+// router.post("/register", async (req: Request, res: Response) => {
+//   try {
+//     const { uid, name, userImg, isAdmin, introduction } = req.body;
+//     if (!uid || !name) {
+//       res.status(400).send({ error: "uid and name are required" });
+//       return;
+//     }
 
-    const result = await prisma.user.create({
-      data: {
-        uid,
-        name,
-        userImg,
-        isAdmin: isAdmin ? true : false,
-        introduction: introduction || "",
-      },
-    });
+//     const result = await prisma.user.create({
+//       data: {
+//         uid,
+//         name,
+//         userImg,
+//         isAdmin: isAdmin ? true : false,
+//         introduction: introduction || "",
+//       },
+//     });
 
-    // ユーザーが認証された場合、JWTを生成
-    const token = jwt.sign(result, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+//     // ユーザーが認証された場合、JWTを生成
+//     const token = jwt.sign(result, process.env.JWT_SECRET, {
+//       expiresIn: "7d",
+//     });
 
-    res.status(200).json({ token, user: result });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error registering user" });
-  }
-});
+//     res.status(200).json({ token, user: result });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error registering user" });
+//   }
+// });
 
 // ユーザー削除機能
-router.delete(
-  "/delete",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    try {
-      const { id, uid } = req.body;
-      console.log("/eatfish_back/search/user", { id, uid });
+// router.delete(
+//   "/delete",
+//   authenticateToken,
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { id, uid } = req.body;
+//       console.log("/eatfish_back/search/user", { id, uid });
 
-      if (!id && !uid) {
-        return res.status(400).json({ error: "id or uid is required" });
-      }
-      const whereParam: { [key: string]: any } = {};
-      //idが指定されていればパラメータに設定
-      if (id) {
-        whereParam.id = id;
-      }
+//       if (!id && !uid) {
+//         return res.status(400).json({ error: "id or uid is required" });
+//       }
+//       const whereParam: { [key: string]: any } = {};
+//       //idが指定されていればパラメータに設定
+//       if (id) {
+//         whereParam.id = id;
+//       }
 
-      //uidが指定されていればパラメータに設定
-      if (uid) {
-        whereParam.uid = uid;
-      }
+//       //uidが指定されていればパラメータに設定
+//       if (uid) {
+//         whereParam.uid = uid;
+//       }
 
-      const deletedUser = await prisma.user.deleteMany({
-        where: whereParam,
-      });
+//       const deletedUser = await prisma.user.deleteMany({
+//         where: whereParam,
+//       });
 
-      res
-        .status(200)
-        .send(`User with UID:id( ${id}),uid (${uid}) deleted successfully`);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Error deleting user");
-    }
-  }
-);
+//       res
+//         .status(200)
+//         .send(`User with UID:id( ${id}),uid (${uid}) deleted successfully`);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).send("Error deleting user");
+//     }
+//   }
+// );
 
 // ユーザー情報変更機能
-router.put(
-  "/update",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    try {
-      const { id, uid, name, userImg, isAdmin, introduction } = req.body;
-      if (!id && !uid) {
-        return res.status(400).json({ error: "id or uid is required" });
-      }
+// router.put(
+//   "/update",
+//   authenticateToken,
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { id, uid, name, userImg, isAdmin, introduction } = req.body;
+//       if (!id && !uid) {
+//         return res.status(400).json({ error: "id or uid is required" });
+//       }
 
-      const updatedUser = await prisma.user.update({
-        where: { id: id || undefined, uid: uid || undefined },
-        data: {
-          name,
-          userImg,
-          isAdmin: isAdmin ? true : false,
-          introduction,
-        },
-      });
+//       const updatedUser = await prisma.user.update({
+//         where: { id: id || undefined, uid: uid || undefined },
+//         data: {
+//           name,
+//           userImg,
+//           isAdmin: isAdmin ? true : false,
+//           introduction,
+//         },
+//       });
 
-      res.status(200).json(updatedUser);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Error updating user information" });
-    }
-  }
-);
+//       res.status(200).json(updatedUser);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ error: "Error updating user information" });
+//     }
+//   }
+// );
 
 // トークン有効期限確認機能
-router.post("/checkToken", async (req: Request, res: Response) => {
-  const authorizationHeader = req.headers.authorization;
+// router.post("/checkToken", async (req: Request, res: Response) => {
+//   const authorizationHeader = req.headers.authorization;
 
-  if (authorizationHeader && authorizationHeader.startsWith("Bearer ")) {
-    const token = authorizationHeader.slice(7); // 'Bearer ' の部分を削除してトークンを取得
+//   if (authorizationHeader && authorizationHeader.startsWith("Bearer ")) {
+//     const token = authorizationHeader.slice(7); // 'Bearer ' の部分を削除してトークンを取得
 
-    try {
-      // トークンの有効期限を確認
-      jwt.verify(token, process.env.JWT_SECRET);
-      // 有効なトークンの場合
-      return res.status(200).json({ valid: true });
-    } catch (err) {
-      console.log("Invalid token");
-      // 無効なトークンの場合
-      return res.status(403).json({ valid: false, error: "Invalid token" });
-    }
-  } else {
-    // Authorization ヘッダーが存在しないか、Bearer スキームで始まっていない場合のエラー処理
-    return res.status(401).json({ valid: false, error: "Unauthorized" });
-  }
-});
+//     try {
+//       // トークンの有効期限を確認
+//       jwt.verify(token, process.env.JWT_SECRET);
+//       // 有効なトークンの場合
+//       return res.status(200).json({ valid: true });
+//     } catch (err) {
+//       console.log("Invalid token");
+//       // 無効なトークンの場合
+//       return res.status(403).json({ valid: false, error: "Invalid token" });
+//     }
+//   } else {
+//     // Authorization ヘッダーが存在しないか、Bearer スキームで始まっていない場合のエラー処理
+//     return res.status(401).json({ valid: false, error: "Unauthorized" });
+//   }
+// });
 
 module.exports = router;
