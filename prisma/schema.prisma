@@ -18,7 +18,7 @@ model User {
   id      Int      @id @default(autoincrement())
   name String @db.VarChar(25)
   userImg String @db.VarChar(500)
-  email String @db.VarChar(255)
+  email String @db.VarChar(255)  @unique
   emailVerifiedAt DateTime? 
   password   String   @db.VarChar(255)
   isAdmin Boolean  @default(false)
@@ -31,7 +31,6 @@ model User {
   notificationsTriggered Notification[] @relation("triggeredBy")
   sentMessages   Message[]
   conversationsParticipatedIn ConversationParticipant[]
-  @@unique([name, email])
 
 }
 
