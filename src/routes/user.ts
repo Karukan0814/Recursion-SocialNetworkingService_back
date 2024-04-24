@@ -156,26 +156,26 @@ router.post("/login", async (req: Request, res: Response) => {
 // );
 
 // トークン有効期限確認機能
-// router.post("/checkToken", async (req: Request, res: Response) => {
-//   const authorizationHeader = req.headers.authorization;
+router.post("/checkToken", async (req: Request, res: Response) => {
+  const authorizationHeader = req.headers.authorization;
 
-//   if (authorizationHeader && authorizationHeader.startsWith("Bearer ")) {
-//     const token = authorizationHeader.slice(7); // 'Bearer ' の部分を削除してトークンを取得
+  if (authorizationHeader && authorizationHeader.startsWith("Bearer ")) {
+    const token = authorizationHeader.slice(7); // 'Bearer ' の部分を削除してトークンを取得
 
-//     try {
-//       // トークンの有効期限を確認
-//       jwt.verify(token, process.env.JWT_SECRET);
-//       // 有効なトークンの場合
-//       return res.status(200).json({ valid: true });
-//     } catch (err) {
-//       console.log("Invalid token");
-//       // 無効なトークンの場合
-//       return res.status(403).json({ valid: false, error: "Invalid token" });
-//     }
-//   } else {
-//     // Authorization ヘッダーが存在しないか、Bearer スキームで始まっていない場合のエラー処理
-//     return res.status(401).json({ valid: false, error: "Unauthorized" });
-//   }
-// });
+    try {
+      // トークンの有効期限を確認
+      jwt.verify(token, process.env.JWT_SECRET);
+      // 有効なトークンの場合
+      return res.status(200).json({ valid: true });
+    } catch (err) {
+      console.log("Invalid token");
+      // 無効なトークンの場合
+      return res.status(403).json({ valid: false, error: "Invalid token" });
+    }
+  } else {
+    // Authorization ヘッダーが存在しないか、Bearer スキームで始まっていない場合のエラー処理
+    return res.status(401).json({ valid: false, error: "Unauthorized" });
+  }
+});
 
 module.exports = router;
