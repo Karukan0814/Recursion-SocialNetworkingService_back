@@ -47,10 +47,10 @@ router.post("/login", async (req: Request, res: Response) => {
         return res.status(200).json({ token, user: userWithoutPass });
       } else {
         // 認証失敗の応答
-        return res.status(401).json({ errot: "Invalid password" });
+        return res.status(401).json({ error: "Invalid password" });
       }
     } else {
-      return res.status(401).json({ errot: "Invalid user" });
+      return res.status(401).json({ error: "this email does not exist." });
     }
   } catch (error) {
     console.error(error);
