@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 
 import { Request, Response } from "express";
 
@@ -59,35 +60,114 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 // ユーザー登録機能
-// router.post("/register", async (req: Request, res: Response) => {
-//   try {
-//     const { uid, name, userImg, isAdmin, introduction } = req.body;
-//     if (!uid || !name) {
-//       res.status(400).send({ error: "uid and name are required" });
-//       return;
-//     }
+router.post("/register", async (req: Request, res: Response) => {
+  try {
+    const { userName, email, password } = req.body;
+    if (!userName || !email || !password) {
+      res
+        .status(400)
+        .send({ error: "userName,email and password are required" });
+      return;
+    }
 
-//     const result = await prisma.user.create({
-//       data: {
-//         uid,
-//         name,
-//         userImg,
-//         isAdmin: isAdmin ? true : false,
-//         introduction: introduction || "",
-//       },
-//     });
+    //Userテーブルに初期登録を行う
+    const hashedPassword = await bcrypt.hash("password", 10);
 
-//     // ユーザーが認証された場合、JWTを生成
-//     const token = jwt.sign(result, process.env.JWT_SECRET, {
-//       expiresIn: "7d",
-//     });
+    const user = await prisma.user.create({
+      data: {
+        name: userName,
+        userImg: "",
+        email,
+        emailVerifiedAt: null,
+        password: hashedPassword,
+        isAdmin: false,
+        introduction: "",
+      },
+    });
 
-//     res.status(200).json({ token, user: result });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Error registering user" });
-//   }
-// });
+    //TODO GmailのSMTPサーバーを利用し、Verificationメールを送信する
+    // Nodemailer Transportの設定
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_MAIL,
+        pass: process.env.SMTP_APP_PASS, // Gmailのアプリパスワード
+      },
+    });
+
+    // メールオプションの設定
+    // トークンの生成
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const mailOptions = {
+      from: process.env.SMTP_MAIL, // 送信者アドレス
+      to: email, // 受信者アドレス
+      subject: "Account Verification _ KarukanSNS", // 件名
+      text: `Hi ${userName}, please verify your account by clicking the link: [${process.env.VERIFICATION_LINK}${token}]`, // 本文
+    };
+
+    // メール送信
+    await transporter.sendMail(mailOptions);
+
+    return res
+      .status(200)
+      .send({ message: "Registration successful, verification email sent." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error registering user" });
+  }
+});
+
+router.post("/verify", async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id || !decoded.email) {
+      throw new Error("Invalid verification token");
+    }
+    //トークンに含まれていた情報からユーザー情報を取得
+    const user = await prisma.user.findUnique({
+      where: {
+        id: decoded.id,
+        email: decoded.email,
+      },
+    });
+
+    if (!user) {
+      throw new Error("this user does not exist");
+    }
+
+    //UserTableのemailVerifiedAtに現在時刻を入れて更新
+    const updatedUser = await prisma.user.update({
+      where: { id: decoded.id, email: decoded.email },
+      data: {
+        emailVerifiedAt: new Date(),
+      },
+    });
+    //トークン生成
+    const loginToken = jwt.sign(
+      { id: updatedUser.id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+    //トークンとユーザー情報返却
+
+    const { password, ...userWithoutPass } = updatedUser;
+
+    //todo 成功時は、localhost:5173/に遷移させたい
+    return res.status(200).json({ token: loginToken, user: userWithoutPass });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error registering user" });
+  }
+});
 
 // ユーザー削除機能
 // router.delete(
