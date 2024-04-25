@@ -37,6 +37,8 @@ router.post("/login", async (req: Request, res: Response) => {
 
     if (user) {
       const passwordValid = await bcrypt.compare(password, user.password);
+      const dbPass = user.password;
+      console.log({ passwordValid, password, dbPass });
       if (passwordValid) {
         // JWT 生成と応答
         // ユーザーが認証された場合、JWTを生成
@@ -71,7 +73,7 @@ router.post("/register", async (req: Request, res: Response) => {
     }
 
     //Userテーブルに初期登録を行う
-    const hashedPassword = await bcrypt.hash("password", 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
