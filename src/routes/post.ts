@@ -20,24 +20,20 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
       const whereClause: any = {};
+
+      const toDate = new Date();
+      const fromDate = new Date(toDate.getTime() - 24 * 3600 * 1000); // 24時間前の日時
+
       console.log({ count, page, orderBy });
 
       //その日に最も「いいね」された投稿を降順取得
 
-      const skip = (page - 1) * count; // ページ番号からskip数を計算
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const todayPosts = await prisma.post.findMany({
-        skip: skip,
-        take: count,
-
+      let skip = (page - 1) * count; // ページ番号からskip数を計算=スキップして取得しないポスト数
+      const posts = await prisma.post.findMany({
         where: {
           createdAt: {
-            gte: today,
-            lt: new Date(today.getTime() + 86400000),
+            gte: fromDate,
+            lt: toDate,
           },
         },
         orderBy: {
@@ -45,37 +41,19 @@ router.get(
             _count: "desc",
           },
         },
+        take: count,
+        skip: (page - 1) * count,
         include: {
+          likes: true, // いいね数を含める
           replies: true,
-          likes: true,
         },
       });
-      let posts = todayPosts;
 
-      // 本日のポストで取得したいポスト数に足りなかった場合、昨日も含める
-      if (todayPosts.length < count) {
-        const needed = count - todayPosts.length;
-        const yesterdayPosts = await prisma.post.findMany({
-          where: {
-            createdAt: {
-              gte: yesterday,
-              lt: today,
-            },
-          },
-          orderBy: {
-            likes: {
-              _count: "desc",
-            },
-          },
-          include: {
-            replies: true,
-            likes: true,
-          },
-          take: needed,
-        });
-
-        posts = [...posts, ...yesterdayPosts];
+      // 投稿がない場合は空の配列を返す
+      if (!posts.length) {
+        return res.status(200).json([]);
       }
+
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -84,7 +62,7 @@ router.get(
   }
 );
 
-//ポストリスト取得API(フォロワー＋自分のポストの最新順)
+//ポストリスト取得API(フォロイー＋自分のポストの最新順)
 router.get(
   "/search/followings",
   authenticateToken,
