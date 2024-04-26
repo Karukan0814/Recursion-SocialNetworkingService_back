@@ -9,7 +9,7 @@ import prisma from "../lib/db";
 
 //ポスト関連API
 
-//ポストリスト取得API
+//ポストリスト取得API(いいね数が多い順)
 router.get("/search/trend", async (req: Request, res: Response) => {
   try {
     const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
@@ -17,6 +17,87 @@ router.get("/search/trend", async (req: Request, res: Response) => {
     const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
     const whereClause: any = {};
     console.log({ count, page, orderBy });
+
+    //その日に最も「いいね」された投稿を降順取得
+
+    const skip = (page - 1) * count; // ページ番号からskip数を計算
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const todayPosts = await prisma.post.findMany({
+      skip: skip,
+      take: count,
+
+      where: {
+        createdAt: {
+          gte: today,
+          lt: new Date(today.getTime() + 86400000),
+        },
+      },
+      orderBy: {
+        likes: {
+          _count: "desc",
+        },
+      },
+      include: {
+        replies: true,
+        likes: true,
+      },
+    });
+    let posts = todayPosts;
+
+    // 本日のポストで取得したいポスト数に足りなかった場合、昨日も含める
+    if (todayPosts.length < count) {
+      const needed = count - todayPosts.length;
+      const yesterdayPosts = await prisma.post.findMany({
+        where: {
+          createdAt: {
+            gte: yesterday,
+            lt: today,
+          },
+        },
+        orderBy: {
+          likes: {
+            _count: "desc",
+          },
+        },
+        include: {
+          replies: true,
+          likes: true,
+        },
+        take: needed,
+      });
+
+      posts = [...posts, ...yesterdayPosts];
+    }
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error searching posts");
+  }
+});
+
+//ポストリスト取得API(フォロワー＋自分のポストの最新順)
+router.get("/search/follower", async (req: Request, res: Response) => {
+  try {
+    const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
+    const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+    const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+    // userIdの存在と型を検証
+    const userId: number = parseInt(req.query.userId as string);
+    if (isNaN(userId) || userId <= 0) {
+      console.log("userId不正", userId);
+
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    //そのユーザーのフォロワーを取得する
+
+    const whereClause: any = {};
+    console.log({ count, page, orderBy, userId });
 
     const skip = (page - 1) * count; // ページ番号からskip数を計算
     let queryOrder: any = [
