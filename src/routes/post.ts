@@ -10,7 +10,7 @@ import prisma from "../lib/db";
 //ポスト関連API
 
 //ポストリスト取得API
-router.get("/search", async (req: Request, res: Response) => {
+router.get("/search/trend", async (req: Request, res: Response) => {
   try {
     const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
     const page: number = parseInt(req.query.page as string) || 1; // ページ番号
