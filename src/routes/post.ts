@@ -86,7 +86,7 @@ router.get(
 
 //ポストリスト取得API(フォロワー＋自分のポストの最新順)
 router.get(
-  "/search/follower",
+  "/search/followings",
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
@@ -94,6 +94,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
+      console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
