@@ -10,52 +10,34 @@ import prisma from "../lib/db";
 //ポスト関連API
 
 //ポストリスト取得API(いいね数が多い順)
-router.get("/search/trend", async (req: Request, res: Response) => {
-  try {
-    const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
-    const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-    const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
-    const whereClause: any = {};
-    console.log({ count, page, orderBy });
+router.get(
+  "/search/trend",
+  authenticateToken,
 
-    //その日に最も「いいね」された投稿を降順取得
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+      const whereClause: any = {};
+      console.log({ count, page, orderBy });
 
-    const skip = (page - 1) * count; // ページ番号からskip数を計算
+      //その日に最も「いいね」された投稿を降順取得
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const todayPosts = await prisma.post.findMany({
-      skip: skip,
-      take: count,
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
 
-      where: {
-        createdAt: {
-          gte: today,
-          lt: new Date(today.getTime() + 86400000),
-        },
-      },
-      orderBy: {
-        likes: {
-          _count: "desc",
-        },
-      },
-      include: {
-        replies: true,
-        likes: true,
-      },
-    });
-    let posts = todayPosts;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const todayPosts = await prisma.post.findMany({
+        skip: skip,
+        take: count,
 
-    // 本日のポストで取得したいポスト数に足りなかった場合、昨日も含める
-    if (todayPosts.length < count) {
-      const needed = count - todayPosts.length;
-      const yesterdayPosts = await prisma.post.findMany({
         where: {
           createdAt: {
-            gte: yesterday,
-            lt: today,
+            gte: today,
+            lt: new Date(today.getTime() + 86400000),
           },
         },
         orderBy: {
@@ -67,67 +49,112 @@ router.get("/search/trend", async (req: Request, res: Response) => {
           replies: true,
           likes: true,
         },
-        take: needed,
       });
+      let posts = todayPosts;
 
-      posts = [...posts, ...yesterdayPosts];
+      // 本日のポストで取得したいポスト数に足りなかった場合、昨日も含める
+      if (todayPosts.length < count) {
+        const needed = count - todayPosts.length;
+        const yesterdayPosts = await prisma.post.findMany({
+          where: {
+            createdAt: {
+              gte: yesterday,
+              lt: today,
+            },
+          },
+          orderBy: {
+            likes: {
+              _count: "desc",
+            },
+          },
+          include: {
+            replies: true,
+            likes: true,
+          },
+          take: needed,
+        });
+
+        posts = [...posts, ...yesterdayPosts];
+      }
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
     }
-    res.status(200).json(posts);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error searching posts");
   }
-});
+);
 
 //ポストリスト取得API(フォロワー＋自分のポストの最新順)
-router.get("/search/follower", async (req: Request, res: Response) => {
-  try {
-    const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
-    const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-    const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+router.get(
+  "/search/follower",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 6; // クエリパラメータ "count" を数値に変換し、デフォルトは6
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-    // userIdの存在と型を検証
-    const userId: number = parseInt(req.query.userId as string);
-    if (isNaN(userId) || userId <= 0) {
-      console.log("userId不正", userId);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("userId不正", userId);
 
-      return res.status(400).json({ error: "userId is required" });
-    }
+        return res.status(400).json({ error: "userId is required" });
+      }
 
-    //そのユーザーのフォロワーを取得する
-
-    const whereClause: any = {};
-    console.log({ count, page, orderBy, userId });
-
-    const skip = (page - 1) * count; // ページ番号からskip数を計算
-    let queryOrder: any = [
-      {
-        likes: {
-          _count: "desc", // 「いいね」の数が多い順に並べ替える
+      //そのユーザーがフォローしているユーザーリストを取得する
+      const userWithFollowings = await prisma.user.findUnique({
+        where: {
+          id: userId,
         },
-      },
-      {
-        createdAt: "desc", // 新着順に並べ替える
-      },
-    ];
+        include: {
+          followings: {
+            include: {
+              following: true, // フォローしているユーザーの詳細情報を取得
+            },
+          },
+        },
+      });
 
-    const posts = await prisma.post.findMany({
-      take: count,
-      skip: skip,
-      where: whereClause,
-      orderBy: queryOrder,
-      include: {
-        replies: true,
-        likes: true,
-      },
-    });
+      // フォローしているユーザーのリストを抽出
+      const followingsIdList = userWithFollowings
+        ? userWithFollowings.followings.map((f) => f.following.id)
+        : [];
+      console.log({ followingsIdList });
+      followingsIdList.push(userId); //ユーザー本人のidも追加
 
-    res.status(200).json(posts);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error searching posts");
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.post.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          userId: {
+            in: followingsIdList, // 複数のユーザーIDに紐づく投稿を取得
+          },
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          replies: true,
+          likes: true,
+        },
+      });
+
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
   }
-});
+);
 
 //ポスト登録機能
 router.post(
