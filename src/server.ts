@@ -5,6 +5,7 @@ const dotenv = require("dotenv").config();
 const helmet = require("helmet");
 const morgan = require("morgan");
 const userRoute = require("./routes/user");
+const postRoute = require("./routes/post");
 
 const PORT = process.env.PORT || 8000;
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
 app.use("/api/user", userRoute);
+app.use("/api/post", postRoute);
 
 // Export the Express app
 module.exports = app;
