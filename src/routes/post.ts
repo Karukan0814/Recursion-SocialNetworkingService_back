@@ -36,11 +36,16 @@ router.get(
             lt: toDate,
           },
         },
-        orderBy: {
-          likes: {
-            _count: "desc",
+        orderBy: [
+          {
+            likes: {
+              _count: "desc",
+            },
           },
-        },
+          {
+            createdAt: "desc",
+          },
+        ],
         take: count,
         skip: (page - 1) * count,
         include: {
