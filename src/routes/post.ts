@@ -140,12 +140,69 @@ router.get(
   }
 );
 
+//リプライポストリスト取得API(親ポストの返信ポストの最新順)
+router.get(
+  "/search/replies",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+      console.log(req.query);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("userId不正", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      // replyToIdの存在と型を検証
+      const replyToId: number = parseInt(req.query.replyToId as string);
+      if (isNaN(replyToId) || replyToId <= 0) {
+        console.log("replyToId不正", replyToId);
+
+        return res.status(400).json({ error: "replyToId is required" });
+      }
+
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.post.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          replyToId,
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          likes: true,
+        },
+      });
+
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
 //ポスト登録機能
 router.post(
   "/register",
   authenticateToken,
   async (req: Request, res: Response) => {
-    const { text, img, userId } = req.body;
+    let { text, img, userId, replyToId } = req.body;
     console.log({ text, img, userId });
     try {
       //textが空でないか
@@ -160,12 +217,21 @@ router.post(
 
         return;
       }
+      if (!replyToId) {
+        replyToId = null;
+      }
+      if (replyToId !== null && typeof replyToId !== "number") {
+        res.status(400).json({ error: "replyToId should be number" });
+
+        return;
+      }
 
       const result = await prisma.post.create({
         data: {
           text,
           img,
           userId,
+          replyToId,
         },
       });
 
@@ -173,6 +239,47 @@ router.post(
     } catch (error) {
       console.error(error);
       res.status(500).send("Error registering category");
+    }
+  }
+);
+
+//ポスト情報取得API(IDから当該ポストの最新情報を取得)
+router.get(
+  "/search/postById",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      // postIdの存在と型を検証
+      const postId: number = parseInt(req.query.postId as string);
+      if (isNaN(postId) || postId <= 0) {
+        console.log("postId不正", postId);
+
+        return res.status(400).json({ error: "postId is required" });
+      }
+
+      //TODO repliesの取得はいらない可能性あり。検討
+      const post = await prisma.post.findUnique({
+        where: {
+          id: postId,
+        },
+        include: {
+          likes: true,
+          replies: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            include: {
+              user: true,
+              likes: true,
+            },
+          },
+        },
+      });
+
+      res.status(200).json(post);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
     }
   }
 );
