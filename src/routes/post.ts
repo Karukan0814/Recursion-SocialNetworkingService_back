@@ -287,4 +287,78 @@ router.get(
   }
 );
 
+//like登録機能
+router.post(
+  "/like/register",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      let { postId, userId, like } = req.body;
+      console.log("/like/register", { postId, userId, like });
+      // postIdと userId を数値に変換（失敗した場合は NaN が返される）
+      postId = parseInt(postId);
+      userId = parseInt(userId);
+
+      // like をブール値に変換
+      if (like === true || like === "true") {
+        like = true;
+      }
+      if (like === false || like === "false") {
+        like = false;
+      }
+
+      // 型チェック
+      if (isNaN(postId) || isNaN(userId) || typeof like !== "boolean") {
+        res
+          .status(400)
+          .json({ error: "Invalid types for postId, userId, or like" });
+        return;
+      }
+
+      //そのユーザーの当該ポストに紐づくlike情報が存在するか確認// そのユーザーのいいねが存在するか確認
+      const likeInfoList = await prisma.postLike.findMany({
+        where: {
+          postId: postId,
+          userId: userId,
+        },
+      });
+      const likeExist = likeInfoList.length > 0;
+      console.log({ postId, userId, like, likeExist });
+
+      if (like) {
+        if (!likeExist) {
+          // まだいいねのレコードが存在していないときのみ登録
+          const result = await prisma.postLike.create({
+            data: {
+              post: { connect: { id: postId } }, // ポストにリレーション
+              user: { connect: { id: userId } }, // ユーザーにリレーション
+            },
+          });
+        }
+      } else {
+        // likeがfalseの場合、ArticleLikeを削除する
+
+        if (likeExist) {
+          // いいねが存在すれば削除
+          const deleteResult = await prisma.postLike.deleteMany({
+            where: {
+              postId: postId,
+              userId: userId,
+            },
+          });
+        }
+      }
+      // いいねが登録された後、現在のいいね数を取得
+      const likeCount = await prisma.postLike.count({
+        where: { postId: postId },
+      });
+
+      res.status(200).json(likeCount);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error registering like");
+    }
+  }
+);
+
 module.exports = router;
