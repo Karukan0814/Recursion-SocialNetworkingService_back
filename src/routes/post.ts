@@ -35,6 +35,7 @@ router.get(
             gte: fromDate,
             lt: toDate,
           },
+          replyToId: null,
         },
         orderBy: [
           {
@@ -123,6 +124,7 @@ router.get(
           userId: {
             in: followingsIdList, // 複数のユーザーIDに紐づく投稿を取得
           },
+          replyToId: null,
         },
         orderBy: queryOrder,
         include: {
@@ -186,6 +188,7 @@ router.get(
         include: {
           user: true,
           likes: true,
+          post: true, // 親ポストを含める
         },
       });
 
@@ -203,7 +206,7 @@ router.post(
   authenticateToken,
   async (req: Request, res: Response) => {
     let { text, img, userId, replyToId } = req.body;
-    console.log({ text, img, userId });
+    console.log({ text, img, userId, replyToId });
     try {
       //textが空でないか
       if (!text || typeof text !== "string") {
