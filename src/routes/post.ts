@@ -188,6 +188,7 @@ router.get(
         include: {
           user: true,
           likes: true,
+          replies: true,
           post: true, // 親ポストを含める
         },
       });
@@ -235,6 +236,12 @@ router.post(
           img,
           userId,
           replyToId,
+        },
+        include: {
+          user: true,
+          likes: true,
+          replies: true,
+          post: true,
         },
       });
 
