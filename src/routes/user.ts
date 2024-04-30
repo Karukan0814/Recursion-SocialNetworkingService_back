@@ -9,7 +9,7 @@ import { PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 
-//ユーザー情報関連API "/eatfish_back/api/user"
+//ユーザー情報関連API
 
 // ログイン機能
 router.post("/login", async (req: Request, res: Response) => {
@@ -33,8 +33,20 @@ router.post("/login", async (req: Request, res: Response) => {
       where: {
         email: email,
       },
+      include: {
+        followers: {
+          select: {
+            followerId: true, // フォロワーのIDのみを取得
+          },
+        },
+        followings: {
+          select: {
+            followingId: true, // フォローしているユーザーのIDのみを取得
+          },
+        },
+      },
     });
-
+    console.log(user);
     if (user) {
       const passwordValid = await bcrypt.compare(password, user.password);
       const dbPass = user.password;
