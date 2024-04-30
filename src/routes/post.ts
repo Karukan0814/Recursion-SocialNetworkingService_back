@@ -59,7 +59,7 @@ router.get(
       if (!posts.length) {
         return res.status(200).json([]);
       }
-      console.log({ posts });
+      // console.log({ posts });
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -201,6 +201,188 @@ router.get(
   }
 );
 
+//ユーザーポストリスト取得API(ユーザーが投稿したポストの最新順)
+router.get(
+  "/search/userPosts",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+      console.log(req.query);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("Invalid userId", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      // replyToIdの存在と型を検証
+      const replyToId: number = parseInt(req.query.replyToId as string);
+      // if (!isNaN(replyToId) || replyToId > 0) {
+
+      // }
+
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.post.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          userId: userId,
+          replyToId: replyToId ? replyToId : null,
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          likes: true,
+          replies: true,
+          post: true, // 親ポストを含める
+        },
+      });
+
+      // console.log(posts);
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
+//ユーザーリプライリスト取得API(ユーザーが投稿したリプライの最新順)
+router.get(
+  "/search/userReplies",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+      console.log(req.query);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("Invalid userId", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      // replyToIdの存在と型を検証
+      const replyToId: number = parseInt(req.query.replyToId as string);
+      // if (!isNaN(replyToId) || replyToId > 0) {
+
+      // }
+
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.post.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          userId: userId,
+          replyToId: {
+            not: null,
+          },
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          likes: true,
+          replies: true,
+          post: true, // 親ポストを含める
+        },
+      });
+
+      // console.log(posts);
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
+//ユーザーいいねリスト取得API(ユーザーがいいねしたポストの最新順)
+router.get(
+  "/search/userLikes",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+      console.log(req.query);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("Invalid userId", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      // replyToIdの存在と型を検証
+      const replyToId: number = parseInt(req.query.replyToId as string);
+      // if (!isNaN(replyToId) || replyToId > 0) {
+
+      // }
+
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.postLike.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          userId: userId,
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          post: {
+            include: {
+              likes: true,
+              replies: {
+                select: { id: true }, // only fetches reply IDs
+              },
+            },
+          },
+        },
+      });
+
+      console.log(posts);
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
 //ポスト登録機能
 router.post(
   "/register",
