@@ -285,4 +285,89 @@ router.post("/checkToken", async (req: Request, res: Response) => {
   }
 });
 
+//フォロワーリスト取得API(id順)
+router.get(
+  "/follower",
+  authenticateToken,
+
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+      const whereClause: any = {};
+
+      const userId: number = parseInt(req.query.userId as string);
+
+      const followers = await prisma.follows.findMany({
+        where: {
+          followingId: userId,
+        },
+        orderBy: [
+          {
+            followerId: "desc", // id順に並べ替える
+          },
+        ],
+        take: count,
+        skip: (page - 1) * count,
+        include: {
+          follower: true,
+        },
+      });
+
+      // 投稿がない場合は空の配列を返す
+      if (!followers.length) {
+        return res.status(200).json([]);
+      }
+      // console.log({ posts });
+      res.status(200).json(followers);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+//フォロ-中のユーザーリスト取得API(id順)
+router.get(
+  "/following",
+  authenticateToken,
+
+  async (req: Request, res: Response) => {
+    try {
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+      const whereClause: any = {};
+
+      const userId: number = parseInt(req.query.userId as string);
+
+      let skip = (page - 1) * count; // ページ番号からskip数を計算=スキップして取得しないポスト数
+      const followers = await prisma.follows.findMany({
+        where: {
+          followerId: userId,
+        },
+        orderBy: [
+          {
+            followingId: "desc", // id順に並べ替える
+          },
+        ],
+        take: count,
+        skip: (page - 1) * count,
+        include: {
+          following: true,
+        },
+      });
+
+      // 投稿がない場合は空の配列を返す
+      if (!followers.length) {
+        return res.status(200).json([]);
+      }
+      // console.log({ posts });
+      res.status(200).json(followers);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
 module.exports = router;
