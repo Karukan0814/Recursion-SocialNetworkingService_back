@@ -52,9 +52,11 @@ router.get(
         include: {
           likes: true, // いいね数を含める
           replies: true,
+          user: true,
         },
       });
 
+      console.log(posts);
       // 投稿がない場合は空の配列を返す
       if (!posts.length) {
         return res.status(200).json([]);
@@ -128,6 +130,7 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
+          post: true,
           user: true,
           replies: true,
           likes: true,
@@ -455,6 +458,8 @@ router.get(
           id: postId,
         },
         include: {
+          post: true,
+          user: true,
           likes: true,
           replies: {
             orderBy: {
@@ -467,7 +472,7 @@ router.get(
           },
         },
       });
-
+      console.log(post);
       res.status(200).json(post);
     } catch (error) {
       console.error(error);
