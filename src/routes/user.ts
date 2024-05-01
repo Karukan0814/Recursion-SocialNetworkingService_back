@@ -221,33 +221,46 @@ router.post("/verify", async (req: Request, res: Response) => {
 // );
 
 // ユーザー情報変更機能
-// router.put(
-//   "/update",
-//   authenticateToken,
-//   async (req: Request, res: Response) => {
-//     try {
-//       const { id, uid, name, userImg, isAdmin, introduction } = req.body;
-//       if (!id && !uid) {
-//         return res.status(400).json({ error: "id or uid is required" });
-//       }
+router.put(
+  "/update",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id, email, name, userImg, introduction } = req.body;
+      console.log({ id, email, name, userImg, introduction });
+      if (!id && !name) {
+        return res.status(400).json({ error: "id or name is required" });
+      }
 
-//       const updatedUser = await prisma.user.update({
-//         where: { id: id || undefined, uid: uid || undefined },
-//         data: {
-//           name,
-//           userImg,
-//           isAdmin: isAdmin ? true : false,
-//           introduction,
-//         },
-//       });
+      const updatedUser = await prisma.user.update({
+        where: { id: id, email: email },
+        data: {
+          name,
+          userImg,
+          // isAdmin: isAdmin ? true : false,
+          introduction,
+        },
+        include: {
+          followers: {
+            select: {
+              followerId: true, // フォロワーのIDのみを取得
+            },
+          },
+          followings: {
+            select: {
+              followingId: true, // フォローしているユーザーのIDのみを取得
+            },
+          },
+        },
+      });
 
-//       res.status(200).json(updatedUser);
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ error: "Error updating user information" });
-//     }
-//   }
-// );
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error updating user information" });
+    }
+  }
+);
 
 // トークン有効期限確認機能
 router.post("/checkToken", async (req: Request, res: Response) => {
