@@ -22,7 +22,7 @@ model User {
   emailVerifiedAt DateTime? 
   password   String   @db.VarChar(255)
   isAdmin Boolean  @default(false)
-  introduction String? @db.VarChar(255)
+  introduction String? @db.VarChar(200)
   likes PostLike[]
   posts Post[]
   followers Follows[] @relation("follower")
