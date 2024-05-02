@@ -283,8 +283,6 @@ router.put(
             followings: followingIds,
           },
         });
-
-        res.status(200).json(updatedUser);
       }
     } catch (error) {
       console.error(error);
@@ -351,7 +349,13 @@ router.get(
         return res.status(200).json([]);
       }
       // console.log({ posts });
-      res.status(200).json(followers);
+      const followerListWithoutPass = followers.map((follower) => {
+        const { password, email, emailVerifiedAt, ...followerWithoutPass } =
+          follower.follower;
+        return followerWithoutPass;
+      });
+
+      res.status(200).json(followerListWithoutPass);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
@@ -373,7 +377,7 @@ router.get(
       const userId: number = parseInt(req.query.userId as string);
 
       let skip = (page - 1) * count; // ページ番号からskip数を計算=スキップして取得しないポスト数
-      const followers = await prisma.follows.findMany({
+      const followings = await prisma.follows.findMany({
         where: {
           followerId: userId,
         },
@@ -390,11 +394,18 @@ router.get(
       });
 
       // 投稿がない場合は空の配列を返す
-      if (!followers.length) {
+      if (!followings.length) {
         return res.status(200).json([]);
       }
       // console.log({ posts });
-      res.status(200).json(followers);
+
+      const followingListWithoutPass = followings.map((follower) => {
+        const { password, email, emailVerifiedAt, ...followerWithoutPass } =
+          follower.following;
+        return followerWithoutPass;
+      });
+
+      res.status(200).json(followingListWithoutPass);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
@@ -414,23 +425,39 @@ router.get(
         where: {
           id: userId,
         },
-
-        include: {
-          followers: {
-            select: {
-              followerId: true, // フォロワーのIDのみを取得
-            },
-          },
-          followings: {
-            select: {
-              followingId: true, // フォローしているユーザーのIDのみを取得
-            },
-          },
-        },
       });
       console.log(userInfo);
-      // console.log({ posts });
-      res.status(200).json(userInfo);
+
+      if (userInfo) {
+        const followings = await prisma.follows.findMany({
+          where: {
+            followerId: userInfo?.id,
+          },
+        });
+        console.log({ followings });
+        const followers = await prisma.follows.findMany({
+          where: {
+            followingId: userInfo?.id,
+          },
+        });
+        console.log({ followers });
+        // パスワード情報を除外して返却
+        const { password, ...userWithoutPass } = userInfo;
+        const followerIds = followers.map((follower) => follower.followerId);
+        const followingIds = followings.map(
+          (following) => following.followingId
+        );
+
+        res.status(200).json({
+          ...userWithoutPass,
+          followers: followerIds,
+          followings: followingIds,
+        });
+
+        // console.log({ posts });
+      } else {
+        res.status(500).send("No User");
+      }
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
