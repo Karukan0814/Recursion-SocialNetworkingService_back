@@ -33,20 +33,22 @@ router.post("/login", async (req: Request, res: Response) => {
       where: {
         email: email,
       },
-      include: {
-        followers: {
-          select: {
-            followerId: true, // フォロワーのIDのみを取得
-          },
-        },
-        followings: {
-          select: {
-            followingId: true, // フォローしているユーザーのIDのみを取得
-          },
-        },
-      },
     });
     console.log(user);
+
+    const followings = await prisma.follows.findMany({
+      where: {
+        followerId: user?.id,
+      },
+    });
+    console.log({ followings });
+    const followers = await prisma.follows.findMany({
+      where: {
+        followingId: user?.id,
+      },
+    });
+    console.log({ followers });
+
     if (user) {
       const passwordValid = await bcrypt.compare(password, user.password);
       const dbPass = user.password;
@@ -57,9 +59,21 @@ router.post("/login", async (req: Request, res: Response) => {
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
           expiresIn: "7d",
         });
-        const { password, ...userWithoutPass } = user;
 
-        return res.status(200).json({ token, user: userWithoutPass });
+        const { password, ...userWithoutPass } = user;
+        const followerIds = followers.map((follower) => follower.followerId);
+        const followingIds = followings.map(
+          (following) => following.followingId
+        );
+
+        res.status(200).json({
+          user: {
+            ...userWithoutPass,
+            followers: followerIds,
+            followings: followingIds,
+          },
+          token,
+        });
       } else {
         // 認証失敗の応答
         return res.status(401).json({ error: "Invalid password" });
@@ -240,21 +254,38 @@ router.put(
           // isAdmin: isAdmin ? true : false,
           introduction,
         },
-        include: {
-          followers: {
-            select: {
-              followerId: true, // フォロワーのIDのみを取得
-            },
-          },
-          followings: {
-            select: {
-              followingId: true, // フォローしているユーザーのIDのみを取得
-            },
-          },
-        },
       });
 
-      res.status(200).json(updatedUser);
+      if (updatedUser) {
+        const followings = await prisma.follows.findMany({
+          where: {
+            followerId: updatedUser?.id,
+          },
+        });
+        console.log({ followings });
+        const followers = await prisma.follows.findMany({
+          where: {
+            followingId: updatedUser?.id,
+          },
+        });
+        console.log({ followers });
+        // パスワード情報を除外して返却
+        const { password, ...userWithoutPass } = updatedUser;
+        const followerIds = followers.map((follower) => follower.followerId);
+        const followingIds = followings.map(
+          (following) => following.followingId
+        );
+
+        res.status(200).json({
+          user: {
+            ...userWithoutPass,
+            followers: followerIds,
+            followings: followingIds,
+          },
+        });
+
+        res.status(200).json(updatedUser);
+      }
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Error updating user information" });
@@ -370,4 +401,82 @@ router.get(
     }
   }
 );
+//ユーザーIdをキーにユーザー情報を取得する
+router.get(
+  "/getUserInfoById",
+  authenticateToken,
+
+  async (req: Request, res: Response) => {
+    try {
+      const userId: number = parseInt(req.query.userId as string);
+
+      const userInfo = await prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+
+        include: {
+          followers: {
+            select: {
+              followerId: true, // フォロワーのIDのみを取得
+            },
+          },
+          followings: {
+            select: {
+              followingId: true, // フォローしているユーザーのIDのみを取得
+            },
+          },
+        },
+      });
+      console.log(userInfo);
+      // console.log({ posts });
+      res.status(200).json(userInfo);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
+// フォロー登録・削除機能
+router.post("/follow", async (req: Request, res: Response) => {
+  try {
+    const { userId, followUserId, followState } = req.body;
+    if (!userId || !followUserId) {
+      res.status(400).send({ error: "userId and followUserId are required" });
+      return;
+    }
+
+    if (followState) {
+      // 新たにユーザーをフォローする場合
+      await prisma.follows.create({
+        data: {
+          followerId: userId,
+          followingId: followUserId,
+        },
+      });
+    } else {
+      // 現在フォローしているユーザーのフォローをはずす場合
+
+      await prisma.follows.deleteMany({
+        where: {
+          followerId: userId,
+          followingId: followUserId,
+        },
+      });
+    }
+
+    const newFollowings = await prisma.follows.findMany({
+      where: {
+        followerId: userId,
+      },
+    });
+    const followings = newFollowings.map((follow) => follow.followingId);
+    console.log(followings);
+    res.status(200).json(followings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error registering user" });
+  }
+});
 module.exports = router;
