@@ -369,6 +369,7 @@ router.get(
           user: true,
           post: {
             include: {
+              user: true,
               likes: true,
               replies: {
                 select: { id: true }, // only fetches reply IDs
