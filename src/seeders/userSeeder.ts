@@ -2,13 +2,10 @@ import prisma from "../lib/db";
 const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
 
-function generateText() {
-  let text = faker.lorem.paragraph();
-  // 文章が255文字を超える場合、255文字に切り詰める
-  if (text.length > 255) {
-    text = text.substring(0, 255);
-  }
-  return text;
+function generatePostText() {
+  const text = faker.lorem.paragraphs(); // ランダムな段落を生成
+  const trimmedText = text.slice(0, 255);
+  return trimmedText;
 }
 
 async function userSeeder() {
@@ -24,7 +21,7 @@ async function userSeeder() {
       emailVerifiedAt: faker.date.past(),
       password: hashedPassword, //bcryptを利用してテストパスワード"password"をハッシュか
       isAdmin: false,
-      introduction: "testIntroduction",
+      introduction: generatePostText(),
     });
   }
 
