@@ -556,4 +556,55 @@ router.post(
   }
 );
 
+//キーワード関連ポストリスト取得API(キーワードに関連するポストの最新順)
+router.get(
+  "/search/keyword",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log("/search/keyword");
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
+
+      console.log(req.query);
+      const keyword = req.query.keyword as string;
+      if (!keyword) {
+        return res.status(400).json({ error: "keyword is required" });
+      }
+      const keywordPattern = `%${keyword}%`; //SQL検索用
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      const posts = await prisma.post.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          // replyToId: null,
+          text: {
+            contains: keyword,
+          },
+        },
+        orderBy: queryOrder,
+        include: {
+          user: true,
+          likes: true,
+          replies: true,
+          post: true, // 親ポストを含める
+        },
+      });
+
+      // console.log(posts);
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
 module.exports = router;
