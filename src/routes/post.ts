@@ -587,7 +587,7 @@ router.get(
         where: {
           // replyToId: null,
           text: {
-            contains: keyword,
+            contains: keywordPattern,
           },
         },
         orderBy: queryOrder,
