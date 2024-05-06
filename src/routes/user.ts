@@ -506,4 +506,43 @@ router.post("/follow", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Error registering user" });
   }
 });
+
+//キーワード関連ユーザ取得API(ユーザー名にキーワードを含むユーザーリストId順）
+router.get(
+  "/search/keyword",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log("/search/keyword");
+      const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
+      const page: number = parseInt(req.query.page as string) || 1; // ページ番号
+
+      console.log(req.query);
+      const keyword = req.query.keyword as string;
+      if (!keyword) {
+        return res.status(400).json({ error: "keyword is required" });
+      }
+      const keywordPattern = `%${keyword}%`; //SQL検索用
+
+      const skip = (page - 1) * count; // ページ番号からskip数を計算
+
+      const users = await prisma.user.findMany({
+        take: count,
+        skip: skip,
+        where: {
+          // replyToId: null,
+          name: {
+            contains: keywordPattern,
+          },
+        },
+      });
+
+      console.log(users);
+      res.status(200).json(users);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
 module.exports = router;
