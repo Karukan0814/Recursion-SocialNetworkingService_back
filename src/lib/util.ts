@@ -29,3 +29,23 @@ export async function userIsAdmin(userId: number): Promise<boolean> {
     return false;
   }
 }
+
+export async function registerMessage(
+  text: string,
+  conversationId: number,
+  senderId: number
+) {
+  try {
+    const newMessage = await prisma.message.create({
+      data: {
+        text,
+        conversationId,
+        senderId,
+      },
+    });
+    return newMessage;
+  } catch (error) {
+    console.error("Error registering a message:", error);
+    return null;
+  }
+}
