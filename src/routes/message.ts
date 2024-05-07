@@ -50,7 +50,14 @@ router.get(
         include: {
           participants: {
             include: {
-              user: true,
+              user: {
+                select: {
+                  id: true,
+
+                  name: true,
+                  userImg: true,
+                },
+              },
             },
           },
           messages: true,
@@ -88,9 +95,9 @@ router.get(
         where: {
           conversationId,
         },
-        include: {
-          sender: true,
-        },
+        // include: {
+        //   sender: true,
+        // },
       });
 
       res.status(200).json(messages);
