@@ -148,7 +148,18 @@ router.post(
           },
         },
         include: {
-          participants: true,
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+
+                  name: true,
+                  userImg: true,
+                },
+              },
+            },
+          },
           // messages: true,
         },
       });
