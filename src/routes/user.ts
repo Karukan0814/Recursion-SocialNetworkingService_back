@@ -5,9 +5,10 @@ const nodemailer = require("nodemailer");
 
 import { Request, Response } from "express";
 
-import { PrismaClient } from "@prisma/client";
+import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
+import { registerNotification } from "../lib/util";
 
 //ユーザー情報関連API
 
@@ -482,6 +483,13 @@ router.post("/follow", async (req: Request, res: Response) => {
           followingId: followUserId,
         },
       });
+
+      //フォローしたユーザーにフォローされた旨、通知する
+      const newNotification = await registerNotification(
+        NotificationType.FOLLOW,
+        followUserId,
+        userId
+      );
     } else {
       // 現在フォローしているユーザーのフォローをはずす場合
 

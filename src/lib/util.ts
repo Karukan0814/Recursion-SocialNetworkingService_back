@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { NotificationType, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -42,10 +42,63 @@ export async function registerMessage(
         conversationId,
         senderId,
       },
+      include: {
+        conversation: {
+          include: {
+            participants: true,
+          },
+        },
+      },
     });
+
+    //メッセージが送信されたことを相手側のユーザーに通知する
+    const sendedUser = newMessage.conversation.participants.find(
+      (user) => user.userId !== senderId
+    );
+
+    if (sendedUser && sendedUser.userId) {
+      const newNotification = await registerNotification(
+        NotificationType.MESSAGE,
+        sendedUser.userId,
+        senderId
+      );
+    }
+
     return newMessage;
   } catch (error) {
     console.error("Error registering a message:", error);
+    return null;
+  }
+}
+
+export async function registerNotification(
+  type: NotificationType,
+  userId: number,
+  triggeredById: number,
+  postId?: number
+) {
+  try {
+    const data: any = {};
+
+    data.type = type;
+    data.userId = userId;
+    data.triggeredById = triggeredById;
+
+    //通知のタイプがmessageかfollowだった場合、postIdは必要ない
+    if (type === NotificationType.Like || type === NotificationType.REPLY) {
+      //通知のタイプがlikeかreplyだった場合、postIdが必要
+
+      if (!postId) {
+        throw new Error("postId is required for registering notification");
+      }
+      data.postId = postId;
+    }
+    const newNotification = await prisma.notification.create({
+      data,
+    });
+    return newNotification;
+  } catch (error) {
+    console.error("Error registering a notification:", error);
     return null;
   }
 }

@@ -3,9 +3,10 @@ const jwt = require("jsonwebtoken");
 
 import { Request, Response } from "express";
 
-import { PrismaClient } from "@prisma/client";
+import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
+import { registerNotification } from "../lib/util";
 
 //ポスト関連API
 
@@ -431,6 +432,16 @@ router.post(
         },
       });
 
+      //誰かのポストへのリプライだった場合、親ポストを投稿したユーザーに通知する
+      if (replyToId && result.post?.userId) {
+        const newNotification = await registerNotification(
+          NotificationType.REPLY,
+          result.post?.userId,
+          userId,
+          replyToId
+        );
+      }
+
       res.status(200).json(result);
     } catch (error) {
       console.error(error);
@@ -528,7 +539,22 @@ router.post(
               post: { connect: { id: postId } }, // ポストにリレーション
               user: { connect: { id: userId } }, // ユーザーにリレーション
             },
+            include: {
+              post: {
+                include: {
+                  user: true,
+                },
+              },
+            },
           });
+
+          //新規にいいねされたことをそのポストを投稿したユーザーに通知する
+          const newNotification = await registerNotification(
+            NotificationType.Like,
+            result.post.userId,
+            userId,
+            result.post.id
+          );
         }
       } else {
         // likeがfalseの場合、ArticleLikeを削除する
