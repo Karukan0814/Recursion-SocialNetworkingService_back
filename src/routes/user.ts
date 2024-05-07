@@ -270,18 +270,18 @@ router.put(
         });
         console.log({ followers });
         // パスワード情報を除外して返却
-        const { password, ...userWithoutPass } = updatedUser;
+        const { password, emailVerifiedAt, ...userWithoutPass } = updatedUser;
         const followerIds = followers.map((follower) => follower.followerId);
         const followingIds = followings.map(
           (following) => following.followingId
         );
 
         res.status(200).json({
-          user: {
-            ...userWithoutPass,
-            followers: followerIds,
-            followings: followingIds,
-          },
+          // user: {
+          ...userWithoutPass,
+          followers: followerIds,
+          followings: followingIds,
+          // },
         });
       }
     } catch (error) {
