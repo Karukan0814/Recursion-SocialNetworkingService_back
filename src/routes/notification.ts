@@ -68,6 +68,20 @@ router.get(
         },
       });
 
+      // 取得した通知は既読にする
+      await prisma.notification.updateMany({
+        where: {
+          createdAt: {
+            gte: fromDate,
+            lt: toDate,
+          },
+          userId,
+        },
+        data: {
+          read: true,
+        },
+      });
+
       console.log(recentNotifications);
       // 投稿がない場合は空の配列を返す
       if (!recentNotifications.length) {
