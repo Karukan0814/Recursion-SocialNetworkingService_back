@@ -1,5 +1,7 @@
 import prisma from "../lib/db";
 import { faker } from "@faker-js/faker";
+import { registerNotification } from "../lib/util";
+import { NotificationType } from "@prisma/client";
 
 function generatePostText() {
   const text = faker.lorem.paragraphs();
@@ -42,10 +44,26 @@ async function likeSeeder() {
   }
 
   try {
-    await prisma.postLike.createMany({
-      data: testLikes,
-      skipDuplicates: true,
-    });
+    for (const testLike of testLikes) {
+      const newLike = await prisma.postLike.create({
+        data: testLike,
+        // skipDuplicates: true,
+        include: {
+          post: {
+            select: {
+              userId: true,
+            },
+          },
+        },
+      });
+
+      await registerNotification(
+        NotificationType.Like,
+        newLike.userId,
+        newLike.post.userId,
+        newLike.postId
+      );
+    }
     console.log(`Successfully seeded ${testLikes.length} likes.`);
   } catch (error) {
     console.error("Failed to seed likes:", error);

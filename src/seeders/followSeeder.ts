@@ -1,6 +1,8 @@
 import prisma from "../lib/db";
 const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
+import { registerNotification } from "../lib/util";
+import { NotificationType } from "@prisma/client";
 
 function generatePostText() {
   const text = faker.lorem.paragraphs();
@@ -35,10 +37,18 @@ async function followSeeder() {
     }
 
     try {
-      await prisma.follows.createMany({
-        data: testReplies,
-        skipDuplicates: true,
-      });
+      for (const rep of testReplies) {
+        const newFollows = await prisma.follows.create({
+          data: rep,
+          // skipDuplicates: true,
+        });
+
+        await registerNotification(
+          NotificationType.FOLLOW,
+          newFollows.followingId,
+          newFollows.followerId
+        );
+      }
       console.log("Follows seeded successfully.");
     } catch (error) {
       console.error("Follows insert failed:", error);

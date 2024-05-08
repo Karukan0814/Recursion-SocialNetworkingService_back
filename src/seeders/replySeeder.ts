@@ -1,6 +1,8 @@
 import prisma from "../lib/db";
 const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
+import { registerNotification } from "../lib/util";
+import { NotificationType } from "@prisma/client";
 
 function generatePostText() {
   const text = faker.lorem.paragraphs(); // ランダムな段落を生成
@@ -51,10 +53,27 @@ async function replySeeder() {
 
   console.log({ testReplies });
   try {
-    await prisma.post.createMany({
-      data: testReplies,
-      skipDuplicates: true,
-    });
+    for (const rep of testReplies) {
+      const newRep = await prisma.post.create({
+        data: rep,
+        include: {
+          post: {
+            select: {
+              id: true,
+              userId: true,
+            },
+          },
+        },
+        // skipDuplicates: true,
+      });
+
+      await registerNotification(
+        NotificationType.REPLY,
+        newRep.post?.userId!,
+        newRep.userId,
+        newRep.post?.id!
+      );
+    }
     console.log("Likes seeded successfully.");
   } catch (error) {
     console.error("Likes insert failed:", error);
