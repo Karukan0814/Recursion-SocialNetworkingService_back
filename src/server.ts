@@ -11,6 +11,8 @@ const morgan = require("morgan");
 const userRoute = require("./routes/user");
 const postRoute = require("./routes/post");
 const messageRoute = require("./routes/message");
+const notificationRoute = require("./routes/notification");
+
 const http = require("http");
 const { Server } = require("socket.io");
 const { isInt, isLength, escape } = require("validator");
@@ -24,6 +26,7 @@ app.use(morgan("common"));
 app.use("/api/user", userRoute);
 app.use("/api/post", postRoute);
 app.use("/api/message", messageRoute);
+app.use("/api/notification", notificationRoute);
 
 // 既存のHTTPサーバーをラップ
 const server = http.createServer(app); //TODO 本番環境でhttps接続にすること
