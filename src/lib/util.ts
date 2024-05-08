@@ -84,6 +84,11 @@ export async function registerNotification(
     data.userId = userId;
     data.triggeredById = triggeredById;
 
+    if (userId === triggeredById) {
+      // 自分で自分のポストにリプしたりいいねしている場合は、通知の必要はない
+      return null;
+    }
+
     //通知のタイプがmessageかfollowだった場合、postIdは必要ない
     if (type === NotificationType.Like || type === NotificationType.REPLY) {
       //通知のタイプがlikeかreplyだった場合、postIdが必要
