@@ -470,7 +470,13 @@ router.get(
           id: postId,
         },
         include: {
-          post: true,
+          post: {
+            include: {
+              user: true,
+              likes: true,
+              replies: true,
+            },
+          },
           user: true,
           likes: true,
           replies: {
