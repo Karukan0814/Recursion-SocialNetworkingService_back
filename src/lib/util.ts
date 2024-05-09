@@ -36,9 +36,11 @@ export async function registerMessage(
   senderId: number
 ) {
   try {
+    const encryptedText = encrypt(text);
+    console.log("encryptedText", encryptedText);
     const newMessage = await prisma.message.create({
       data: {
-        text,
+        text: encryptedText,
         conversationId,
         senderId,
       },
@@ -63,6 +65,12 @@ export async function registerMessage(
         senderId
       );
     }
+
+    // 複合化されたテキストでメッセージオブジェクトを更新
+    const decryptedText = decrypt(newMessage.text); // 暗号化されたテキストを複合化
+    console.log("decryptedText", decryptedText);
+    newMessage.text = decryptedText;
+    console.log("newMessage", newMessage);
 
     return newMessage;
   } catch (error) {
@@ -106,4 +114,35 @@ export async function registerNotification(
     console.error("Error registering a notification:", error);
     return null;
   }
+}
+
+const crypto = require("crypto");
+
+// データを暗号化する関数
+export function encrypt(text: string) {
+  const cipher = crypto.createCipheriv(
+    "aes-256-cbc",
+    Buffer.from(process.env.ENCRYPT_KEY!, "hex"),
+    Buffer.from(process.env.IV_KEY!, "hex")
+  );
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return encrypted.toString("hex");
+}
+
+type EncryptedData = {
+  iv: string;
+  encryptedData: string;
+};
+// データを複合化する関数
+export function decrypt(text: string) {
+  let encryptedText = Buffer.from(text, "hex");
+  const decipher = crypto.createDecipheriv(
+    "aes-256-cbc",
+    Buffer.from(process.env.ENCRYPT_KEY!, "hex"),
+    Buffer.from(process.env.IV_KEY!, "hex")
+  );
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
 }

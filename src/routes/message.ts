@@ -6,6 +6,7 @@ import { Request, Response, text } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
+import { decrypt, encrypt } from "../lib/util";
 
 //会話リスト取得API(最新順)
 router.get(
@@ -195,14 +196,18 @@ router.post(
 
         return;
       }
+      const encryptedText = encrypt(text);
+      console.log("encryptedText", encryptedText);
 
       const newMessage = await prisma.message.create({
         data: {
-          text,
+          text: encryptedText,
           conversationId,
           senderId,
         },
       });
+
+      newMessage.text = text;
       res.status(200).json(newMessage);
     } catch (error) {
       console.error(error);
