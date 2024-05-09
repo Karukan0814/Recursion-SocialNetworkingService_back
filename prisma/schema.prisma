@@ -48,6 +48,8 @@ model Follows {
 model Post {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+  scheduledAt DateTime? 
+  sentAt DateTime? 
   updatedAt DateTime @updatedAt
   post    Post?     @relation("PostReply", fields: [replyToId], references: [id])
   replyToId Int?

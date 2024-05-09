@@ -393,7 +393,7 @@ router.post(
   "/register",
   authenticateToken,
   async (req: Request, res: Response) => {
-    let { text, img, userId, replyToId } = req.body;
+    let { text, img, userId, replyToId, scheduledAt } = req.body;
     console.log({ text, img, userId, replyToId });
     try {
       //textが空でないか
@@ -417,12 +417,24 @@ router.post(
         return;
       }
 
+      // scheduledAt のバリデーションと処理
+      if (scheduledAt && isNaN(Date.parse(scheduledAt))) {
+        res.status(400).json({ error: "Invalid scheduledAt date format" });
+        return;
+      }
+      // scheduledAt ? new Date(scheduledAt) : null
+      // const convertedScheduledAt=scheduledAt ? new Date(scheduledAt) : null
+
+      const sentAt = scheduledAt ? null : new Date();
+
       const result = await prisma.post.create({
         data: {
           text,
           img,
           userId,
           replyToId,
+          scheduledAt,
+          sentAt,
         },
         include: {
           user: true,
