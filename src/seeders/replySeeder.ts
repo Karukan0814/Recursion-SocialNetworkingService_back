@@ -21,9 +21,12 @@ async function replySeeder() {
 
   const testPostList = await prisma.post.findMany({
     where: {
-      createdAt: {
-        gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // createdAtが24時間前以上のもの
+      NOT: {
+        sentAt: null,
       },
+      // createdAt: {
+      //   gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // createdAtが24時間前以上のもの
+      // },
     },
   });
   if (testUserList.length > 0 && testPostList.length > 0) {
@@ -44,6 +47,7 @@ async function replySeeder() {
           img: generateRandomImageUrl(),
           userId: randomUser.id,
           replyToId: randomPost.id,
+          sentAt: new Date(),
         } // ユーザーにリレーション
       );
     }

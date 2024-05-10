@@ -27,6 +27,7 @@ async function postSeeder() {
         text: generatePostText(),
         img: generateRandomImageUrl(),
         userId: randomUser.id,
+        sentAt: new Date(),
       });
     } else {
       console.log("No users found in the database.");
