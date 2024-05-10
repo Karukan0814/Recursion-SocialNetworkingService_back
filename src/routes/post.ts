@@ -651,4 +651,68 @@ router.get(
     }
   }
 );
+
+//ポスト削除機能
+router.delete(
+  "/delete",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const postId = parseInt(req.query.postId as string); // リクエストから記事のIDを取得
+      const userId = parseInt(req.query.userId as string); // リクエストからユーザーのIDを取得
+      console.log("/delete/post", { postId, userId });
+
+      if (!postId || !userId) {
+        res.status(400).json({ error: " postId and userId are required" });
+        return;
+      }
+
+      // 記事の userId を取得
+      const post = await prisma.post.findUnique({
+        where: {
+          id: postId,
+        },
+      });
+      console.log("post", post);
+      if (!post) {
+        res.status(404).json({ error: `post with ID: ${postId} not found` });
+        return;
+      }
+
+      if (post.userId !== userId) {
+        //TODO　管理者だった場合は許可
+
+        // ポスト作成者でなかった場合、エラー
+        res.status(403).json({
+          error: "Permission denied: You are not the owner of this post",
+        });
+        return;
+      }
+
+      // userId が一致する場合（または管理者の場合のみ）以下の削除を行う
+
+      // トランザクション開始
+      await prisma.$transaction(async (prisma) => {
+        //TODO　関連リプライも一括削除すべきか
+        await prisma.postLike.deleteMany({
+          where: {
+            postId,
+          },
+        });
+        console.log("いいね削除");
+
+        await prisma.post.delete({
+          where: {
+            id: postId,
+          },
+        });
+      });
+      res.status(200).send(`Post with ID: ${postId} deleted successfully`);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error deleting article" });
+    }
+  }
+);
+
 module.exports = router;
