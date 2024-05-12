@@ -8,7 +8,8 @@ import { Request, Response } from "express";
 import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
-import { registerNotification } from "../lib/util";
+import { hashFilename, registerNotification } from "../lib/util";
+import { s3, upload } from "../lib/multer";
 
 //ユーザー情報関連API
 
@@ -239,19 +240,42 @@ router.post("/verify", async (req: Request, res: Response) => {
 router.put(
   "/update",
   authenticateToken,
+  upload.single("userImg"), //ミドルウェアで受け取ったimgファイルをメモリに一時保存する
+
   async (req: Request, res: Response) => {
     try {
-      const { id, email, name, userImg, introduction } = req.body;
-      console.log({ id, email, name, userImg, introduction });
-      if (!id && !name) {
-        return res.status(400).json({ error: "id or name is required" });
+      let { email, name, introduction } = req.body;
+      let userId = parseInt(req.body.userId as string);
+
+      if (!userId && !name) {
+        return res.status(400).json({ error: "userId or name is required" });
+      }
+      const userImg = req.file; // multerがファイルを処理する
+      console.log({ userId, email, name, userImg, introduction });
+
+      // S3に画像をアップロード
+      let imgURL = null;
+      if (userImg) {
+        const hashedFileName = hashFilename(userImg.originalname);
+
+        const s3Result = await s3
+          .upload({
+            Bucket: process.env.AWS_S3_BUCKET_NAME, // S3のバケット名
+            Key: `userImg/${Date.now()}_${hashedFileName}`, // ファイル名
+            Body: userImg.buffer, // ファイルデータ
+            // ACL: "public-read", // 公開設定
+          })
+          .promise();
+
+        imgURL = s3Result.Location; // アップロード後のS3 URL
+        console.log("imgURL", imgURL);
       }
 
       const updatedUser = await prisma.user.update({
-        where: { id: id, email: email },
+        where: { id: userId },
         data: {
           name,
-          userImg,
+          userImg: imgURL,
           // isAdmin: isAdmin ? true : false,
           introduction,
         },
