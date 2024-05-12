@@ -7,6 +7,7 @@ import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { hashFilename, registerNotification } from "../lib/util";
+import { s3, upload } from "../lib/multer";
 
 //ポスト関連API
 
@@ -388,20 +389,6 @@ router.get(
     }
   }
 );
-const multer = require("multer");
-const AWS = require("aws-sdk");
-
-// Multer設定
-const storage = multer.memoryStorage(); // ファイルをメモリに一時保存
-const upload = multer({ storage: storage });
-
-// AWS S3 設定
-
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
 
 // ポスト登録機能
 router.post(
@@ -444,6 +431,7 @@ router.post(
       const sentAt = scheduledAt ? null : new Date();
 
       // S3に画像をアップロード
+      let imgURL = null;
       if (img) {
         const hashedFileName = hashFilename(img.originalname);
 
@@ -456,39 +444,37 @@ router.post(
           })
           .promise();
 
-        const imgURL = s3Result.Location; // アップロード後のS3 URL
+        imgURL = s3Result.Location; // アップロード後のS3 URL
         console.log("imgURL", imgURL);
-
-        const result = await prisma.post.create({
-          data: {
-            text,
-            img: imgURL, // S3 URLを保存
-            userId,
-            replyToId,
-            scheduledAt,
-            sentAt,
-          },
-          include: {
-            user: true,
-            likes: true,
-            replies: true,
-            post: true,
-          },
-        });
-
-        if (replyToId && result.post?.userId) {
-          await registerNotification(
-            NotificationType.REPLY,
-            result.post?.userId,
-            userId,
-            replyToId
-          );
-        }
-
-        res.status(200).json(result);
-      } else {
-        res.status(400).json({ error: "Image file is required." });
       }
+
+      const result = await prisma.post.create({
+        data: {
+          text,
+          img: imgURL ? imgURL : null, // S3 URLを保存
+          userId,
+          replyToId,
+          scheduledAt,
+          sentAt,
+        },
+        include: {
+          user: true,
+          likes: true,
+          replies: true,
+          post: true,
+        },
+      });
+
+      if (replyToId && result.post?.userId) {
+        await registerNotification(
+          NotificationType.REPLY,
+          result.post?.userId,
+          userId,
+          replyToId
+        );
+      }
+
+      res.status(200).json(result);
     } catch (error) {
       console.error("Error:", error);
       res.status(500).send("Error registering category");
