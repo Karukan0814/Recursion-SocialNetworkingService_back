@@ -687,7 +687,6 @@ router.delete(
         return;
       }
 
-      // 記事の userId を取得
       const post = await prisma.post.findUnique({
         where: {
           id: postId,
@@ -727,6 +726,25 @@ router.delete(
           },
         });
       });
+
+      // ポストに画像が添付されていた場合、S3から削除する
+      if (post.img) {
+        const url = new URL(post.img); // URLオブジェクトを作成
+        console.log({ url });
+        const bucketName = url.hostname.split(".")[0]; // ホスト名からバケット名を抽出
+        console.log({ bucketName });
+
+        const key = url.pathname.substring(1); // パス名から最初の '/' を取り除いてキーを取得
+        console.log({ key });
+
+        const params = {
+          Bucket: bucketName,
+          Key: key,
+        };
+
+        const data = await s3.deleteObject(params).promise();
+      }
+
       res.status(200).send(`Post with ID: ${postId} deleted successfully`);
     } catch (error) {
       console.error(error);
