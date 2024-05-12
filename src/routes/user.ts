@@ -271,14 +271,14 @@ router.put(
         console.log("imgURL", imgURL);
       }
 
+      const updateData = {
+        name,
+        introduction,
+        ...(imgURL && { userImg: imgURL }), // imgURLがnullでない場合のみuserImgプロパティを追加
+      };
       const updatedUser = await prisma.user.update({
         where: { id: userId },
-        data: {
-          name,
-          userImg: imgURL,
-          // isAdmin: isAdmin ? true : false,
-          introduction,
-        },
+        data: updateData,
       });
 
       if (updatedUser) {
