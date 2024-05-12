@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
-import { registerNotification } from "../lib/util";
+import { hashFilename, registerNotification } from "../lib/util";
 
 //ポスト関連API
 
@@ -388,26 +388,45 @@ router.get(
     }
   }
 );
-//ポスト登録機能
+const multer = require("multer");
+const AWS = require("aws-sdk");
+
+// Multer設定
+const storage = multer.memoryStorage(); // ファイルをメモリに一時保存
+const upload = multer({ storage: storage });
+
+// AWS S3 設定
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+// ポスト登録機能
 router.post(
   "/register",
   authenticateToken,
+  upload.single("img"), //ミドルウェアで受け取ったimgファイルをメモリに一時保存する
   async (req: Request, res: Response) => {
-    let { text, img, userId, replyToId, scheduledAt } = req.body;
-    console.log({ text, img, userId, replyToId });
+    let { text, userId, replyToId, scheduledAt } = req.body;
+    userId = parseInt(req.body.userId as string);
+    replyToId = parseInt(req.body.replyToId as string);
+
+    const img = req.file; // multerがファイルを処理する
+    console.log({ text, userId, img, replyToId, scheduledAt });
+
     try {
-      //textが空でないか
       if (!text || typeof text !== "string") {
-        res.status(400).json({ error: "text is required" });
-        return;
+        return res.status(400).json({ error: "text is required" });
       }
 
-      //userIdが空でないか
-      if (!userId || typeof userId !== "number") {
-        res.status(400).json({ error: "userId is required" });
+      if (userId !== null && typeof userId !== "number") {
+        res.status(400).json({ error: "userId should be number" });
 
         return;
       }
+
       if (!replyToId) {
         replyToId = null;
       }
@@ -416,47 +435,62 @@ router.post(
 
         return;
       }
-
-      // scheduledAt のバリデーションと処理
       if (scheduledAt && isNaN(Date.parse(scheduledAt))) {
-        res.status(400).json({ error: "Invalid scheduledAt date format" });
-        return;
+        return res
+          .status(400)
+          .json({ error: "Invalid scheduledAt date format" });
       }
-      // scheduledAt ? new Date(scheduledAt) : null
-      // const convertedScheduledAt=scheduledAt ? new Date(scheduledAt) : null
 
       const sentAt = scheduledAt ? null : new Date();
 
-      const result = await prisma.post.create({
-        data: {
-          text,
-          img,
-          userId,
-          replyToId,
-          scheduledAt,
-          sentAt,
-        },
-        include: {
-          user: true,
-          likes: true,
-          replies: true,
-          post: true,
-        },
-      });
+      // S3に画像をアップロード
+      if (img) {
+        const hashedFileName = hashFilename(img.originalname);
 
-      //誰かのポストへのリプライだった場合、親ポストを投稿したユーザーに通知する
-      if (replyToId && result.post?.userId) {
-        const newNotification = await registerNotification(
-          NotificationType.REPLY,
-          result.post?.userId,
-          userId,
-          replyToId
-        );
+        const s3Result = await s3
+          .upload({
+            Bucket: process.env.AWS_S3_BUCKET_NAME, // S3のバケット名
+            Key: `uploads/${Date.now()}_${hashedFileName}`, // ファイル名
+            Body: img.buffer, // ファイルデータ
+            // ACL: "public-read", // 公開設定
+          })
+          .promise();
+
+        const imgURL = s3Result.Location; // アップロード後のS3 URL
+        console.log("imgURL", imgURL);
+
+        const result = await prisma.post.create({
+          data: {
+            text,
+            img: imgURL, // S3 URLを保存
+            userId,
+            replyToId,
+            scheduledAt,
+            sentAt,
+          },
+          include: {
+            user: true,
+            likes: true,
+            replies: true,
+            post: true,
+          },
+        });
+
+        if (replyToId && result.post?.userId) {
+          await registerNotification(
+            NotificationType.REPLY,
+            result.post?.userId,
+            userId,
+            replyToId
+          );
+        }
+
+        res.status(200).json(result);
+      } else {
+        res.status(400).json({ error: "Image file is required." });
       }
-
-      res.status(200).json(result);
     } catch (error) {
-      console.error(error);
+      console.error("Error:", error);
       res.status(500).send("Error registering category");
     }
   }

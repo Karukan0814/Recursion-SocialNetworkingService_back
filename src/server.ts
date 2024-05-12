@@ -12,6 +12,7 @@ const userRoute = require("./routes/user");
 const postRoute = require("./routes/post");
 const messageRoute = require("./routes/message");
 const notificationRoute = require("./routes/notification");
+const multer = require("multer");
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -21,6 +22,9 @@ const PORT = process.env.PORT || 8000;
 
 app.use(cors()); //CORSエラー回避
 app.use(express.json());
+
+app.use(express.static("public"));
+
 app.use(helmet());
 app.use(morgan("common"));
 app.use("/api/user", userRoute);

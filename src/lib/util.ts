@@ -146,3 +146,13 @@ export function decrypt(text: string) {
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();
 }
+
+// ファイル名をハッシュ化する関数
+export function hashFilename(filename: string) {
+  // SHA-256ハッシュ関数を使用
+  const hash = crypto.createHash("sha256");
+  // ファイル名をハッシュ化
+  hash.update(filename);
+  // ハッシュ化されたデータを16進数の文字列として取得
+  return hash.digest("hex");
+}
