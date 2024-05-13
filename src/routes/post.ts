@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
-import { hashFilename, registerNotification } from "../lib/util";
+import { compressVideo, hashFilename, registerNotification } from "../lib/util";
 import { s3, upload } from "../lib/multer";
 
 //ポスト関連API
@@ -433,6 +433,12 @@ router.post(
       // S3に画像をアップロード
       let imgURL = null;
       if (img) {
+        let uploadFileData = img.buffer;
+        //imgが動画の場合、圧縮する
+        if (img.mimetype.startsWith("video")) {
+          uploadFileData = await compressVideo(img);
+        }
+
         const hashedFileName = hashFilename(img.originalname);
 
         const s3Result = await s3
@@ -440,6 +446,7 @@ router.post(
             Bucket: process.env.AWS_S3_BUCKET_NAME, // S3のバケット名
             Key: `uploads/${Date.now()}_${hashedFileName}`, // ファイル名
             Body: img.buffer, // ファイルデータ
+            ContentType: img.mimetype,
             // ACL: "public-read", // 公開設定
           })
           .promise();
@@ -452,6 +459,7 @@ router.post(
         data: {
           text,
           img: imgURL ? imgURL : null, // S3 URLを保存
+          imgFileType: img?.mimetype,
           userId,
           replyToId,
           scheduledAt,

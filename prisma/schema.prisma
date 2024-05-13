@@ -56,6 +56,8 @@ model Post {
   replies Post[]    @relation("PostReply")
   text     String   @db.VarChar(200)
   img String? @db.VarChar(500)
+  imgFileType String? @db.VarChar(500)
+
   user    User     @relation(fields: [userId], references: [id])
   userId  Int 
   likes PostLike[]

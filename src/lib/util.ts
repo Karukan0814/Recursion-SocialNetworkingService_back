@@ -156,3 +156,37 @@ export function hashFilename(filename: string) {
   // ハッシュ化されたデータを16進数の文字列として取得
   return hash.digest("hex");
 }
+import fs from "fs";
+import { exec } from "child_process";
+import os from "os";
+import path from "path";
+import util from "util";
+
+const execAsync = util.promisify(exec);
+
+export async function compressVideo(video: Express.Multer.File) {
+  const extension = video.originalname.split(".").pop();
+  const tempDir = os.tmpdir(); // OSの一時ディレクトリを取得
+  const tempInPath = path.join(tempDir, `input_${Date.now()}.${extension}`);
+  const tempOutPath = path.join(tempDir, `output_${Date.now()}.${extension}`);
+
+  console.log(tempInPath, tempOutPath);
+  // ファイルシステムに動画を一時保存
+  fs.writeFileSync(tempInPath, video.buffer);
+  console.log(tempInPath);
+  // ファイルシステムに動画を一時保存
+  fs.writeFileSync(tempInPath, video.buffer);
+
+  // FFmpegを使用して動画を圧縮
+  await execAsync(
+    `ffmpeg -i ${tempInPath} -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2'" -b:v 500k -c:a copy ${tempOutPath}`
+  );
+  // 圧縮された動画ファイルを読み込む
+  const compressedVideo = fs.readFileSync(tempOutPath);
+
+  // 一時ファイルを削除
+  fs.unlinkSync(tempInPath);
+  fs.unlinkSync(tempOutPath);
+
+  return compressedVideo;
+}
