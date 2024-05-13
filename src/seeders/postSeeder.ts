@@ -26,6 +26,8 @@ async function postSeeder() {
       testParentPost.push({
         text: generatePostText(),
         img: generateRandomImageUrl(),
+        imgFileType: "image/jpeg", //piscumは通常、jpegファイルを返すため
+
         userId: randomUser.id,
         sentAt: new Date(),
       });
