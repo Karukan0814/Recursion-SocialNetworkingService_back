@@ -100,8 +100,12 @@ router.get(
         //   sender: true,
         // },
       });
+      const decryptedMessages = messages.map((message) => {
+        message.text = decrypt(message.text);
+        return message;
+      });
 
-      res.status(200).json(messages);
+      res.status(200).json(decryptedMessages);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
