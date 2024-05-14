@@ -190,3 +190,19 @@ export async function compressVideo(video: Express.Multer.File) {
 
   return compressedVideo;
 }
+
+export async function getUnreadNotificationsCount(userId: number) {
+  const unreadNotificationCount = await prisma.notification.count({
+    where: {
+      read: false,
+      userId,
+    },
+    orderBy: [
+      {
+        createdAt: "desc",
+      },
+    ],
+  });
+  console.log("getUnreadNotificationsCount", unreadNotificationCount);
+  return unreadNotificationCount;
+}

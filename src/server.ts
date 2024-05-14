@@ -1,6 +1,16 @@
-import { Socket } from "socket.io";
+// import { Socket } from "socket.io";
 import { authenticateSocketToken } from "./lib/authenticateToken";
-import { registerMessage } from "./lib/util";
+import { getUnreadNotificationsCount, registerMessage } from "./lib/util";
+import { Socket as OriginalSocket } from "socket.io";
+
+import { Socket } from "socket.io";
+
+// Extend the interface
+declare module "socket.io" {
+  interface Socket {
+    userid: number;
+  }
+}
 
 const express = require("express");
 const app = express();
@@ -49,6 +59,18 @@ io.use(authenticateSocketToken);
 // Socket.IOの接続イベント
 io.on("connection", (socket: Socket) => {
   console.log("A user connected");
+
+  // ユーザーIDを受信
+  socket.on("userConnected", async (userid) => {
+    console.log(`User connected with ID: ${userid}`);
+    socket.userid = userid; // ソケットインスタンスにユーザーIDを保存
+
+    // 定期的に未読通知数を送信
+    socket.on("requestUnreadNotifications", async () => {
+      const count = await getUnreadNotificationsCount(userid);
+      socket.emit("unreadNotificationsCount", count);
+    });
+  });
 
   // ルームへの参加
   socket.on("joinConversation", (conversationId) => {

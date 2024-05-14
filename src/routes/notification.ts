@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
-import { registerNotification } from "../lib/util";
+import { getUnreadNotificationsCount, registerNotification } from "../lib/util";
 
 //通知関連API
 
@@ -89,6 +89,33 @@ router.get(
       }
       // console.log({ posts });
       res.status(200).json(recentNotifications);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
+//未読通知数取得API
+router.get(
+  "/getUnreadNoticeCount",
+  authenticateToken,
+
+  async (req: Request, res: Response) => {
+    try {
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("userId不正", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      const unreadNotificationCount = await getUnreadNotificationsCount(userId);
+
+      console.log(unreadNotificationCount);
+
+      res.status(200).json(unreadNotificationCount);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
