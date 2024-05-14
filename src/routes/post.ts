@@ -26,8 +26,6 @@ router.get(
       const toDate = new Date();
       const fromDate = new Date(toDate.getTime() - 24 * 3600 * 1000); // 24時間前の日時
 
-      console.log({ count, page, orderBy });
-
       //その日に最も「いいね」された投稿を降順取得
 
       let skip = (page - 1) * count; // ページ番号からskip数を計算=スキップして取得しないポスト数
@@ -58,7 +56,7 @@ router.get(
         },
       });
 
-      console.log(posts);
+      // console.log(posts);
       // 投稿がない場合は空の配列を返す
       if (!posts.length) {
         return res.status(200).json([]);
@@ -82,7 +80,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -109,7 +107,7 @@ router.get(
       const followingsIdList = userWithFollowings
         ? userWithFollowings.followings.map((f) => f.following.id)
         : [];
-      console.log({ followingsIdList });
+      // console.log({ followingsIdList });
       followingsIdList.push(userId); //ユーザー本人のidも追加
 
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
@@ -157,7 +155,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -216,7 +214,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -275,7 +273,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -336,7 +334,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -530,7 +528,7 @@ router.get(
           },
         },
       });
-      console.log(post);
+      // console.log(post);
       res.status(200).json(post);
     } catch (error) {
       console.error(error);
@@ -546,7 +544,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       let { postId, userId, like } = req.body;
-      console.log("/like/register", { postId, userId, like });
+      // console.log("/like/register", { postId, userId, like });
       // postIdと userId を数値に変換（失敗した場合は NaN が返される）
       postId = parseInt(postId);
       userId = parseInt(userId);
@@ -575,7 +573,7 @@ router.post(
         },
       });
       const likeExist = likeInfoList.length > 0;
-      console.log({ postId, userId, like, likeExist });
+      // console.log({ postId, userId, like, likeExist });
 
       if (like) {
         if (!likeExist) {
@@ -639,7 +637,7 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      console.log(req.query);
+      // console.log(req.query);
       const keyword = req.query.keyword as string;
       if (!keyword) {
         return res.status(400).json({ error: "keyword is required" });
@@ -700,7 +698,7 @@ router.delete(
           id: postId,
         },
       });
-      console.log("post", post);
+      // console.log("post", post);
       if (!post) {
         res.status(404).json({ error: `post with ID: ${postId} not found` });
         return;
