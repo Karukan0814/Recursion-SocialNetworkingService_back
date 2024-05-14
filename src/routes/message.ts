@@ -8,6 +8,65 @@ import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { decrypt, encrypt } from "../lib/util";
 
+//全会話リスト取得API(最新順)
+router.get(
+  "/search/conversationsAll",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log(req.query);
+      // userIdの存在と型を検証
+      const userId: number = parseInt(req.query.userId as string);
+      if (isNaN(userId) || userId <= 0) {
+        console.log("userId不正", userId);
+
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
+
+      let queryOrder: any = [
+        {
+          createdAt: "desc", // 新着順に並べ替える
+        },
+      ];
+
+      //そのユーザーがフォローしているユーザーリストを取得する
+      const conversations = await prisma.conversation.findMany({
+        orderBy: { id: "desc" },
+
+        where: {
+          participants: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+
+                  name: true,
+                  userImg: true,
+                },
+              },
+            },
+          },
+          messages: true,
+        },
+      });
+
+      res.status(200).json(conversations);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error searching posts");
+    }
+  }
+);
+
 //会話リスト取得API(最新順)
 router.get(
   "/search/conversations",
