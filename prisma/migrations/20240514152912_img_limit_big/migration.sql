@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `Post` MODIFY `img` VARCHAR(1000) NULL;
+
+-- AlterTable
+ALTER TABLE `User` MODIFY `userImg` VARCHAR(1000) NULL;

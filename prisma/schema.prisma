@@ -17,7 +17,7 @@ datasource db {
 model User {
   id      Int      @id @default(autoincrement())
   name String @db.VarChar(25)
-  userImg String? @db.VarChar(500)
+  userImg String? @db.VarChar(1000)
   email String @db.VarChar(255)  @unique
   emailVerifiedAt DateTime? 
   password   String   @db.VarChar(255)
@@ -55,7 +55,7 @@ model Post {
   replyToId Int?
   replies Post[]    @relation("PostReply")
   text     String   @db.VarChar(200)
-  img String? @db.VarChar(500)
+  img String? @db.VarChar(1000)
   imgFileType String? @db.VarChar(500)
 
   user    User     @relation(fields: [userId], references: [id])
