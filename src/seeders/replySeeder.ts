@@ -7,7 +7,7 @@ import {
   generatePostText,
   generateRandomImageUrl,
   getRandomObject,
-} from "./seederUtils";
+} from "../lib/seederUtils";
 
 //【要件】 そして、1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
 

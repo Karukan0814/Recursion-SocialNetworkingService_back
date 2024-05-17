@@ -1,6 +1,9 @@
 import prisma from "../lib/db";
-import { registerNotification } from "../lib/util";
-import { getRandomDelay, getRandomObject } from "./seederUtils";
+import {
+  getRandomDelay,
+  getRandomObject,
+  registerNotification,
+} from "../lib/util";
 import { LIKES_PER_USER } from "./seederConatants";
 import { NotificationType } from "../../node_modules/.prisma/client/index";
 
@@ -13,7 +16,11 @@ async function likeSeeder(likeCount = LIKES_PER_USER, setRandamDelay = false) {
   console.log("likeSeeder_start", likeCount);
   const testLikes: Array<any> = [];
 
-  const users = await prisma.user.findMany(); //登録されているユーザーのリスト
+  const users = await prisma.user.findMany({
+    where: {
+      fakeFlag: true,
+    },
+  }); //登録されているユーザーのリスト
 
   if (users.length === 0) {
     console.log("No users.");
@@ -31,7 +38,7 @@ async function likeSeeder(likeCount = LIKES_PER_USER, setRandamDelay = false) {
         }, //そのユーザーidではないポストを取得
       },
     });
-    console.log(recentPosts);
+    // console.log(recentPosts);
     const likePosts = getRandomObject(recentPosts, likeCount); //いいねしたいポストをランダムで取得
     try {
       console.log(setRandamDelay);
@@ -40,6 +47,7 @@ async function likeSeeder(likeCount = LIKES_PER_USER, setRandamDelay = false) {
         // いいねするタイミングに遅延を設けたい場合
         for (let likePost of likePosts) {
           const delay = getRandomDelay();
+          console.log(likePost.id, delay);
           setTimeout(async () => {
             const newLike = await prisma.postLike.createMany({
               data: {

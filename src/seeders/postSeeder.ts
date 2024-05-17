@@ -6,7 +6,7 @@ import {
   generatePostText,
   generateRandomImageUrl,
   getRandomDateWithin24Hours,
-} from "./seederUtils";
+} from "../lib/seederUtils";
 import { Post } from "@prisma/client";
 
 // 【要件】ユーザーは毎日ランダムに 3 つの投稿を行い、=毎日ランダムなテキストジェネレーターを使用した内容の異なる 3 つの投稿を行うようにスケジュール

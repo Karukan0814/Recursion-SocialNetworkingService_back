@@ -2,14 +2,13 @@ import prisma from "../lib/db";
 import { PrismaClient, User } from "@prisma/client";
 const bcrypt = require("bcryptjs");
 import { fa, faker } from "@faker-js/faker";
-import { registerNotification } from "../lib/util";
+import { getRandomObject, registerNotification } from "../lib/util";
 import { NotificationType } from "@prisma/client";
 import {
   FOLLOWS_PER_USER,
   NUMBER_OF_INFLUENCERS,
   NUMBER_OF_INFLUENCERS_FOLLOWERS,
 } from "./seederConatants";
-import { getRandomObject } from "./seederUtils";
 
 // 【要件】fakeユーザー2000人の中で、特定の 50 人の「インフルエンサー」アカウントがある
 
