@@ -1,13 +1,11 @@
+import { NotificationType } from "../../node_modules/.prisma/client/index";
 import prisma from "../lib/db";
-const bcrypt = require("bcryptjs");
-import { faker } from "@faker-js/faker";
 import {
   generatePostText,
   generateRandomImageUrl,
   getRandomObject,
   registerNotification,
 } from "../lib/util";
-import { NotificationType } from "@prisma/client";
 
 //【要件】 そして、1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
 

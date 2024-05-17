@@ -3,7 +3,8 @@
 // さらに、特定の 50 人の「インフルエンサー」アカウントがある場合、
 // これらの架空のユーザーはその中から20の投稿に「いいね」をします。=各偽ユーザーは、毎日 50 人の「インフルエンサー」アカウントの中から 20 の投稿に「いいね」をします
 
-import { NotificationType } from "@prisma/client";
+// import { NotificationType } from "@prisma/client";
+import { NotificationType } from "../../node_modules/.prisma/client/index";
 import prisma from "../lib/db";
 import { getRandomObject, registerNotification } from "../lib/util";
 import {

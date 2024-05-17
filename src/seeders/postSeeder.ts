@@ -1,9 +1,6 @@
 import prisma from "../lib/db";
-const bcrypt = require("bcryptjs");
-import { faker } from "@faker-js/faker";
 import { POSTS_PER_USER } from "./seederConatants";
 
-import { Post } from "@prisma/client";
 import {
   generatePostText,
   generateRandomImageUrl,

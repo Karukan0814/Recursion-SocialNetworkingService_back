@@ -1,6 +1,10 @@
-import { NotificationType, PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import {
+  NotificationType,
+  PrismaClient,
+} from "../../node_modules/.prisma/client/index";
+import prisma from "./db";
+import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
+const crypto = await import("node:crypto");
 
 // Content-Typeヘッダーからエンコーディングを取得するユーティリティ関数
 export function getEncodingFromContentType(
@@ -116,8 +120,6 @@ export async function registerNotification(
   }
 }
 
-const crypto = require("crypto");
-
 // データを暗号化する関数
 export function encrypt(text: string) {
   const cipher = crypto.createCipheriv(
@@ -206,8 +208,6 @@ export async function getUnreadNotificationsCount(userId: number) {
   console.log("getUnreadNotificationsCount", unreadNotificationCount);
   return unreadNotificationCount;
 }
-
-import { faker } from "@faker-js/faker";
 
 export function generatePostText(limit: number) {
   const text = faker.lorem.paragraphs(); // ランダムな段落を生成

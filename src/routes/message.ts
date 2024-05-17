@@ -1,13 +1,10 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
+import express, { Request, Response, text } from "express";
 
-import { Request, Response, text } from "express";
-
-import { PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { decrypt, encrypt } from "../lib/util";
 
+const router = express.Router();
 //全会話リスト取得API(最新順)
 router.get(
   "/search/conversationsAll",
@@ -279,4 +276,4 @@ router.post(
   }
 );
 
-module.exports = router;
+export default router;

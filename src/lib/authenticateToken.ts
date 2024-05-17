@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { Socket } from "socket.io";
-const jwt = require("jsonwebtoken");
+import { Socket } from "../../node_modules/socket.io/dist/socket";
+import jwt from "jsonwebtoken";
+import { ExtendedError } from "socket.io/dist/namespace";
 
 // JWT認証Middleware
 export const authenticateToken = (
@@ -16,7 +17,7 @@ export const authenticateToken = (
     if (!token) return res.status(401).json({ error: "Authentication failed" });
 
     try {
-      jwt.verify(token, process.env.JWT_SECRET);
+      jwt.verify(token, process.env.JWT_SECRET || "");
       next();
     } catch (err) {
       console.log("Invalid token");
@@ -32,7 +33,8 @@ export const authenticateToken = (
 export const authenticateSocketToken = (
   socket: Socket,
 
-  next: NextFunction
+  // next: NextFunction
+  next: (err?: ExtendedError) => void
 ) => {
   // クライアントからの接続時に送信されるトークンを取得
   const token = socket.handshake.auth.token;
@@ -40,7 +42,7 @@ export const authenticateSocketToken = (
   if (token) {
     try {
       // JWTの検証
-      const user = jwt.verify(token, process.env.JWT_SECRET);
+      const user = jwt.verify(token, process.env.JWT_SECRET || "");
 
       next(); // 認証成功時には次の処理へ
     } catch (error) {

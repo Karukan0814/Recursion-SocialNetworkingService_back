@@ -1,14 +1,11 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
+import express, { Request, Response } from "express";
 
-import { Request, Response } from "express";
-
-import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { getUnreadNotificationsCount, registerNotification } from "../lib/util";
 
 //通知関連API
+const router = express.Router();
 
 //最新通知取得API(最新順)
 router.get(
@@ -122,4 +119,4 @@ router.get(
     }
   }
 );
-module.exports = router;
+export default router;

@@ -1,15 +1,14 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
+import express, { Request, Response } from "express";
 
-import { Request, Response } from "express";
-
-import { NotificationType, PrismaClient } from "@prisma/client";
+// import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { compressVideo, hashFilename, registerNotification } from "../lib/util";
-import { s3, upload } from "../lib/multer";
+import { s3, upload } from "../lib/imgHandler";
+import { NotificationType } from "../../node_modules/.prisma/client/index";
 
 //ポスト関連API
+const router = express.Router();
 
 //ポストリスト取得API(いいね数が多い順)
 router.get(
@@ -441,7 +440,7 @@ router.post(
 
         const s3Result = await s3
           .upload({
-            Bucket: process.env.AWS_S3_BUCKET_NAME, // S3のバケット名
+            Bucket: process.env.AWS_S3_BUCKET_NAME || "", // S3のバケット名
             Key: `uploads/${Date.now()}_${hashedFileName}`, // ファイル名
             Body: img.buffer, // ファイルデータ
             ContentType: img.mimetype,
@@ -762,4 +761,4 @@ router.delete(
   }
 );
 
-module.exports = router;
+export default router;

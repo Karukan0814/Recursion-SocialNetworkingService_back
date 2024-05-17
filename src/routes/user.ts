@@ -1,17 +1,19 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
+import jwt from "jsonwebtoken";
 
-import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 
-import { NotificationType, PrismaClient } from "@prisma/client";
+import express, { Request, Response } from "express";
+
+// import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { hashFilename, registerNotification } from "../lib/util";
-import { s3, upload } from "../lib/multer";
+import { s3, upload } from "../lib/imgHandler";
+import { NotificationType } from "../../node_modules/.prisma/client/index";
 
 //ユーザー情報関連API
+const router = express.Router();
 
 // ログイン機能
 router.post("/login", async (req: Request, res: Response) => {
@@ -58,7 +60,7 @@ router.post("/login", async (req: Request, res: Response) => {
       if (passwordValid) {
         // JWT 生成と応答
         // ユーザーが認証された場合、JWTを生成
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "", {
           expiresIn: "7d",
         });
 
@@ -129,7 +131,7 @@ router.post("/register", async (req: Request, res: Response) => {
     // トークンの生成
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "",
       { expiresIn: "1h" }
     );
 
@@ -152,11 +154,21 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
+interface DecodedToken {
+  id: number;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
 router.post("/verify", async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || ""
+    ) as DecodedToken;
     if (!decoded || !decoded.id || !decoded.email) {
       throw new Error("Invalid verification token");
     }
@@ -182,7 +194,7 @@ router.post("/verify", async (req: Request, res: Response) => {
     //トークン生成
     const loginToken = jwt.sign(
       { id: updatedUser.id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "",
       {
         expiresIn: "7d",
       }
@@ -260,7 +272,7 @@ router.put(
 
         const s3Result = await s3
           .upload({
-            Bucket: process.env.AWS_S3_BUCKET_NAME, // S3のバケット名
+            Bucket: process.env.AWS_S3_BUCKET_NAME || "", // S3のバケット名
             Key: `userImg/${Date.now()}_${hashedFileName}`, // ファイル名
             Body: userImg.buffer, // ファイルデータ
             // ACL: "public-read", // 公開設定
@@ -325,7 +337,7 @@ router.post("/checkToken", async (req: Request, res: Response) => {
 
     try {
       // トークンの有効期限を確認
-      jwt.verify(token, process.env.JWT_SECRET);
+      jwt.verify(token, process.env.JWT_SECRET || "");
       // 有効なトークンの場合
       return res.status(200).json({ valid: true });
     } catch (err) {
@@ -577,4 +589,4 @@ router.get(
     }
   }
 );
-module.exports = router;
+export default router;

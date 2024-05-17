@@ -1,5 +1,5 @@
-const multer = require("multer");
-const AWS = require("aws-sdk");
+import multer from "multer";
+import AWS from "aws-sdk";
 
 // Multer設定
 export const storage = multer.memoryStorage(); // ファイルをメモリに一時保存

@@ -1,7 +1,5 @@
 import prisma from "../lib/db";
-import { PrismaClient, User } from "@prisma/client";
-const bcrypt = require("bcryptjs");
-import { fa, faker } from "@faker-js/faker";
+import { User } from "@prisma/client";
 import { getRandomObject, registerNotification } from "../lib/util";
 import { NotificationType } from "@prisma/client";
 import {

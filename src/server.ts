@@ -1,7 +1,6 @@
 // import { Socket } from "socket.io";
 import { authenticateSocketToken } from "./lib/authenticateToken";
 import { getUnreadNotificationsCount, registerMessage } from "./lib/util";
-import { Socket as OriginalSocket } from "socket.io";
 
 import { Socket } from "socket.io";
 
@@ -12,23 +11,20 @@ declare module "socket.io" {
   }
 }
 
-const express = require("express");
-const app = express();
-const cors = require("cors");
-const dotenv = require("dotenv").config();
-const helmet = require("helmet");
-const morgan = require("morgan");
-const userRoute = require("./routes/user");
-const postRoute = require("./routes/post");
-const messageRoute = require("./routes/message");
-const notificationRoute = require("./routes/notification");
-const multer = require("multer");
-
-const http = require("http");
-const { Server } = require("socket.io");
-const { isInt, isLength, escape } = require("validator");
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import http from "http";
+import { Server } from "socket.io";
+import { isInt, isLength, escape } from "validator";
+import userRoute from "./routes/user";
+import postRoute from "./routes/post";
+import messageRoute from "./routes/message";
+import notificationRoute from "./routes/notification";
 
 const PORT = process.env.PORT || 8000;
+const app = express();
 
 app.use(cors()); //CORSエラー回避
 app.use(express.json());
