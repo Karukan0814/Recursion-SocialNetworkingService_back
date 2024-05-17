@@ -31,6 +31,7 @@ model User {
   notificationsTriggered Notification[] @relation("triggeredBy")
   sentMessages   Message[]
   conversationsParticipatedIn ConversationParticipant[]
+  fakeFlag Boolean  @default(false)
 
 }
 
