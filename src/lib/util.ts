@@ -3,8 +3,14 @@ import {
   PrismaClient,
 } from "../../node_modules/.prisma/client/index";
 import prisma from "./db";
-import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
+// import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
 const crypto = await import("node:crypto");
+import fs from "fs";
+import { exec } from "child_process";
+import os from "os";
+import path from "path";
+import util from "util";
+import { faker } from "@faker-js/faker";
 
 // Content-Typeヘッダーからエンコーディングを取得するユーティリティ関数
 export function getEncodingFromContentType(
@@ -158,11 +164,6 @@ export function hashFilename(filename: string) {
   // ハッシュ化されたデータを16進数の文字列として取得
   return hash.digest("hex");
 }
-import fs from "fs";
-import { exec } from "child_process";
-import os from "os";
-import path from "path";
-import util from "util";
 
 const execAsync = util.promisify(exec);
 

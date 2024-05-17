@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 
 import { NUMBER_OF_USERS } from "./seederConatants";
 import { generatePostText } from "../lib/util";
-import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
+// import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
+import { faker } from "@faker-js/faker";
 
 //【要件】 アプリケーションは数千人の架空のユーザーを生成する必要があります。
 
