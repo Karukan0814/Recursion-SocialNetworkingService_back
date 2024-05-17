@@ -14,11 +14,11 @@ async function runAllSeeders() {
     //   console.log(`${seederName} executed successfully.`);
     // }
 
-    await userSeeder();
+    // await userSeeder();
     await postSeeder();
     await replySeeder();
     await likeSeeder();
-    await followSeeder();
+    // await followSeeder();
 
     // 他のシーダー関数もここで呼び出す
     console.log("All seeders executed successfully.");

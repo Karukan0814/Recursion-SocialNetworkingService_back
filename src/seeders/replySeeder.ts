@@ -3,82 +3,74 @@ const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
 import { registerNotification } from "../lib/util";
 import { NotificationType } from "@prisma/client";
+import {
+  generatePostText,
+  generateRandomImageUrl,
+  getRandomObject,
+} from "./seederUtils";
 
-function generatePostText() {
-  const text = faker.lorem.paragraphs(); // ランダムな段落を生成
-  const trimmedText = text.slice(0, 200); // 200文字にトリム
-  return trimmedText;
-}
-function generateRandomImageUrl() {
-  const width = faker.datatype.number({ min: 100, max: 1000 });
-  const height = faker.datatype.number({ min: 100, max: 1000 });
-  return `https://picsum.photos/${width}/${height}`;
-}
+//【要件】 そして、1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
+
 async function replySeeder() {
-  console.log("replySeeder_start");
-  const testReplies = [];
-  const testUserList = await prisma.user.findMany();
-
-  const testPostList = await prisma.post.findMany({
-    where: {
-      NOT: {
-        sentAt: null,
-      },
-      // createdAt: {
-      //   gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // createdAtが24時間前以上のもの
-      // },
-    },
-  });
-  if (testUserList.length > 0 && testPostList.length > 0) {
-    for (let i = 0; i < 200; i++) {
-      // リストからランダムに1ユーザーを選択
-      const randomIndexUser = Math.floor(Math.random() * testUserList.length);
-      const randomUser = testUserList[randomIndexUser];
-
-      // console.log(randomUser); // ランダムに選ばれたユーザーの情報を表示
-      // リストからランダムに1ポストを選択
-      const randomIndexPost = Math.floor(Math.random() * testPostList.length);
-      const randomPost = testPostList[randomIndexPost];
-      console.log(randomPost); // ランダムに選ばれたユーザーの情報を表示
-
-      testReplies.push(
-        {
-          text: generatePostText(),
-          img: generateRandomImageUrl(),
-          userId: randomUser.id,
-          replyToId: randomPost.id,
-          sentAt: new Date(),
-        } // ユーザーにリレーション
-      );
-    }
-  } else {
-    console.log("No users or no posts found in the database.");
-  }
-
-  console.log({ testReplies });
   try {
-    for (const rep of testReplies) {
-      const newRep = await prisma.post.create({
-        data: rep,
-        include: {
-          post: {
-            select: {
-              id: true,
-              userId: true,
+    console.log("replySeeder_start");
+    const testReplies = [];
+    const testUserList = await prisma.user.findMany();
+
+    const toDate = new Date();
+    const fromDate = new Date(toDate.getTime() - 24 * 3600 * 1000); // 24時間前の日時
+
+    const testPostList = await prisma.post.findMany({
+      where: {
+        sentAt: {
+          gte: fromDate, //24時間以内に投稿されたポスト
+          lt: toDate,
+        },
+        replyToId: null, //返信ではない、メインのポスト
+        NOT: {
+          sentAt: null,
+        },
+      },
+    });
+    if (testUserList.length > 0 && testPostList.length > 0) {
+      for (let user of testUserList) {
+        // 登録している各ユーザーがランダムに一つのメイン投稿に返信していく
+        const mainPostOfOtherUsers = testPostList.filter(
+          (post) => post.userId !== user.id
+        );
+        const randomPostList = getRandomObject(mainPostOfOtherUsers, 1);
+
+        const replyToPost = randomPostList[0];
+
+        const newRep = await prisma.post.create({
+          data: {
+            text: generatePostText(200),
+            img: generateRandomImageUrl(),
+            imgFileType: "image/jpeg", //piscumは通常、jpegファイルを返すため
+            userId: user.id,
+            replyToId: replyToPost.id,
+            scheduledAt: null,
+            sentAt: new Date(),
+          },
+          include: {
+            post: {
+              select: {
+                id: true,
+                userId: true,
+              },
             },
           },
-        },
-        // skipDuplicates: true,
-      });
+          // skipDuplicates: true,
+        });
 
-      await registerNotification(
-        NotificationType.REPLY,
-        newRep.post?.userId!,
-        newRep.userId,
-        newRep.post?.id!
-      );
+        await registerNotification(
+          NotificationType.REPLY,
+          newRep.post?.userId!,
+          newRep.userId,
+          newRep.post?.id!
+        );
+      }
     }
-    console.log("Likes seeded successfully.");
   } catch (error) {
     console.error("Likes insert failed:", error);
   }

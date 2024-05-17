@@ -1,17 +1,16 @@
 import prisma from "../lib/db";
 const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
+import { NUMBER_OF_USERS } from "./seederConatants";
+import { generatePostText } from "./seederUtils";
 
-function generatePostText() {
-  const text = faker.lorem.paragraphs(); // ランダムな段落を生成
-  const trimmedText = text.slice(0, 255);
-  return trimmedText;
-}
+//【要件】 アプリケーションは数千人の架空のユーザーを生成する必要があります。
 
 async function userSeeder() {
   console.log("userSeeder_start");
   const testUsers = [];
-  for (let i = 0; i < 100; i++) {
+  //定数：NUMBER_OF_USERSの分だけfakeUserを作成
+  for (let i = 0; i < NUMBER_OF_USERS; i++) {
     const hashedPassword = await bcrypt.hash("password", 10);
 
     testUsers.push({
@@ -21,7 +20,8 @@ async function userSeeder() {
       emailVerifiedAt: faker.date.past(),
       password: hashedPassword, //bcryptを利用してテストパスワード"password"をハッシュか
       isAdmin: false,
-      introduction: generatePostText(),
+      introduction: generatePostText(255),
+      fakeFlag: true,
     });
   }
 

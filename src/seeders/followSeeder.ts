@@ -1,61 +1,120 @@
 import prisma from "../lib/db";
+import { PrismaClient, User } from "@prisma/client";
 const bcrypt = require("bcryptjs");
-import { faker } from "@faker-js/faker";
+import { fa, faker } from "@faker-js/faker";
 import { registerNotification } from "../lib/util";
 import { NotificationType } from "@prisma/client";
+import {
+  FOLLOWS_PER_USER,
+  NUMBER_OF_INFLUENCERS,
+  NUMBER_OF_INFLUENCERS_FOLLOWERS,
+} from "./seederConatants";
+import { getRandomObject } from "./seederUtils";
 
-function generatePostText() {
-  const text = faker.lorem.paragraphs();
-  const trimmedText = text.slice(0, 200);
-  return trimmedText;
-}
+// 【要件】fakeユーザー2000人の中で、特定の 50 人の「インフルエンサー」アカウントがある
 
-function generateRandomImageUrl() {
-  const width = faker.datatype.number({ min: 100, max: 1000 });
-  const height = faker.datatype.number({ min: 100, max: 1000 });
-  return `https://picsum.photos/${width}/${height}`;
+async function createInfluencers() {
+  console.log("followSeeder_start");
+  const testFollows = [];
+  const testUserList: User[] = await prisma.user.findMany();
+
+  if (testUserList.length > NUMBER_OF_INFLUENCERS) {
+    //全ユーザーの中から50人をランダムにインフルエンサーアカウントとしてピックアップする
+    const influencers = getRandomObject<User>(
+      testUserList,
+      NUMBER_OF_INFLUENCERS
+    );
+    console.log(
+      "influencers",
+      influencers.map((val) => val.id)
+    );
+
+    for (let influencer of influencers) {
+      //全ユーザーの中から、当該インフルエンサー以外のユーザーリストを作成
+      const filteredUsers = testUserList.filter(
+        (user) => user.id !== influencer.id
+      );
+
+      // 各インフルエンサーには最低100人のフォロワーをつける
+      const influencersFollowers = getRandomObject<User>(
+        filteredUsers,
+        NUMBER_OF_INFLUENCERS
+      );
+      const followerIds = influencersFollowers.map((val) => val.id);
+      console.log(
+        "influencersFollowers",
+        influencersFollowers.map((val) => val.id)
+      );
+      const data = followerIds.map((id) => {
+        return { followerId: id, followingId: influencer.id };
+      });
+
+      try {
+        const newFollows = await prisma.follows.createMany({
+          data,
+          skipDuplicates: true,
+        });
+
+        for (let notice of data) {
+          await registerNotification(
+            NotificationType.FOLLOW,
+            notice.followingId,
+            notice.followerId
+          );
+        }
+      } catch (e) {
+        console.error("something wrong with following influencer");
+      }
+    }
+  } else {
+    console.log("Not enough users found in the database.");
+  }
 }
 
 async function followSeeder() {
   console.log("followSeeder_start");
-  const testReplies = [];
-  const testUserList = await prisma.user.findMany();
 
-  if (testUserList.length > 1) {
-    for (let i = 0; i < testUserList.length; i++) {
-      const followingUser = testUserList[i];
-      const filteredUsers = testUserList.filter(
-        (user) => user.id !== followingUser.id
-      );
-      const randomIndex = Math.floor(Math.random() * filteredUsers.length);
-      const followerUser = filteredUsers[randomIndex];
+  // 各ユーザーにつき、3人にフォローされる
 
-      testReplies.push({
-        followerId: followerUser.id,
-        followingId: followingUser.id,
-      });
+  const testUserList: User[] = await prisma.user.findMany();
+
+  const influencers = getRandomObject<User>(
+    testUserList,
+    NUMBER_OF_INFLUENCERS
+  );
+  const influencersIds = influencers.map((val) => val.id);
+  for (let user of testUserList) {
+    let influencerFlag = false;
+    if (influencersIds.includes(user.id)) {
+      influencerFlag = true;
     }
+    const filteredUsers = testUserList.filter((other) => other.id !== user.id);
+    const randomUserList = getRandomObject(
+      filteredUsers,
+      influencerFlag ? NUMBER_OF_INFLUENCERS_FOLLOWERS : FOLLOWS_PER_USER
+    );
+    const followerIds = randomUserList.map((val) => val.id);
+    console.log("followerIds", followerIds);
+    const data = followerIds.map((id) => {
+      return { followerId: id, followingId: user.id };
+    });
 
     try {
-      for (const rep of testReplies) {
-        const newFollows = await prisma.follows.create({
-          data: rep,
-          // skipDuplicates: true,
-        });
+      const newFollows = await prisma.follows.createMany({
+        data,
+        skipDuplicates: true,
+      });
 
+      for (let notice of data) {
         await registerNotification(
           NotificationType.FOLLOW,
-          newFollows.followingId,
-          newFollows.followerId
+          notice.followingId,
+          notice.followerId
         );
       }
-      console.log("Follows seeded successfully.");
-    } catch (error) {
-      console.error("Follows insert failed:", error);
+    } catch (e) {
+      console.error("something wrong with following seed");
     }
-    console.log("Follows seeded");
-  } else {
-    console.log("Not enough users found in the database.");
   }
 }
 
