@@ -5,14 +5,12 @@
 
 import { NotificationType } from "@prisma/client";
 import prisma from "../lib/db";
-import { registerNotification } from "../lib/util";
-import likeSeeder from "../seeders/likeSeeder";
+import { getRandomObject, registerNotification } from "../lib/util";
 import {
   LIKES_PER_INFLUENCER,
   LIKES_PER_USER,
   NUMBER_OF_INFLUENCERS_FOLLOWERS,
 } from "../seeders/seederConatants";
-import { getRandomObject } from "../lib/seederUtils";
 
 async function likeInfluencerPosts(likeCount = LIKES_PER_USER) {
   try {

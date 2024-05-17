@@ -2,7 +2,7 @@ import prisma from "../lib/db";
 const bcrypt = require("bcryptjs");
 import { faker } from "@faker-js/faker";
 import { NUMBER_OF_USERS } from "./seederConatants";
-import { generatePostText } from "../lib/seederUtils";
+import { generatePostText } from "../lib/util";
 
 //【要件】 アプリケーションは数千人の架空のユーザーを生成する必要があります。
 
