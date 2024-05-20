@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { Socket } from "../../node_modules/socket.io/dist/socket";
 import jwt from "jsonwebtoken";
+import { Socket } from "socket.io/dist";
 import { ExtendedError } from "socket.io/dist/namespace";
 
 // JWT認証Middleware

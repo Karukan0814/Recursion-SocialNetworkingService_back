@@ -1,7 +1,4 @@
-import {
-  NotificationType,
-  PrismaClient,
-} from "../../node_modules/.prisma/client/index";
+import { NotificationType } from "@prisma/client";
 import prisma from "./db";
 // import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
 const crypto = await import("node:crypto");

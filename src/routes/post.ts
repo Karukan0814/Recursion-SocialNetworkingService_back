@@ -5,10 +5,13 @@ import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { compressVideo, hashFilename, registerNotification } from "../lib/util";
 import { s3, upload } from "../lib/imgHandler";
-import { NotificationType } from "../../node_modules/.prisma/client/index";
+// import { NotificationType } from "../../node_modules/.prisma/client/index";
+import { NotificationType } from "@prisma/client";
 
 //ポスト関連API
 const router = express.Router();
+
+//TODO　返却値にセキュリティ上問題のあるプロパティを削除して返す
 
 //ポストリスト取得API(いいね数が多い順)
 router.get(

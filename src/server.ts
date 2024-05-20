@@ -3,7 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import http from "http";
-import { Server, Socket } from "socket.io";
 import { isInt, isLength, escape } from "validator";
 import userRoute from "./routes/user";
 import postRoute from "./routes/post";
@@ -11,8 +10,8 @@ import messageRoute from "./routes/message";
 import notificationRoute from "./routes/notification";
 import { authenticateSocketToken } from "./lib/authenticateToken";
 import { getUnreadNotificationsCount, registerMessage } from "./lib/util";
-
-declare module "socket.io" {
+import { Server, Socket } from "socket.io";
+declare module "socket.io/dist" {
   interface Socket {
     userid: number;
   }
