@@ -7,8 +7,6 @@ import {
   getRandomDateWithin24Hours,
 } from "../lib/util";
 
-// 【要件】ユーザーは毎日ランダムに 3 つの投稿を行い、=毎日ランダムなテキストジェネレーターを使用した内容の異なる 3 つの投稿を行うようにスケジュール
-
 async function postSeeder(setRandom = false) {
   console.log("postSeeder_start");
   const testParentPost: Array<any> = [];
@@ -32,13 +30,13 @@ async function postSeeder(setRandom = false) {
     }
   }
 
-  console.log({ testParentPost });
+  // console.log({ testParentPost });
   try {
-    await prisma.post.createMany({
+    const posts = await prisma.post.createMany({
       data: testParentPost,
       skipDuplicates: true,
     });
-    console.log("Posts seeded successfully.");
+    console.log("Posts seeded successfully.", posts.count);
   } catch (error) {
     console.error("posts insert failed:", error);
   }

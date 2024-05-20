@@ -1,4 +1,5 @@
-import { NotificationType } from "../../node_modules/.prisma/client/index";
+// import { NotificationType } from "../../node_modules/.prisma/client/index";
+import { NotificationType, Post } from "@prisma/client";
 import prisma from "../lib/db";
 import {
   generatePostText,
@@ -7,18 +8,15 @@ import {
   registerNotification,
 } from "../lib/util";
 
-//【要件】 そして、1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
-
 async function replySeeder() {
   try {
     console.log("replySeeder_start");
-    const testReplies = [];
     const testUserList = await prisma.user.findMany();
 
     const toDate = new Date();
     const fromDate = new Date(toDate.getTime() - 24 * 3600 * 1000); // 24時間前の日時
 
-    const testPostList = await prisma.post.findMany({
+    const testPostList: Post[] = await prisma.post.findMany({
       where: {
         sentAt: {
           gte: fromDate, //24時間以内に投稿されたポスト
@@ -30,6 +28,7 @@ async function replySeeder() {
         },
       },
     });
+    let replyCount = 0;
     if (testUserList.length > 0 && testPostList.length > 0) {
       for (let user of testUserList) {
         // 登録している各ユーザーがランダムに一つのメイン投稿に返信していく
@@ -67,8 +66,11 @@ async function replySeeder() {
           newRep.userId,
           newRep.post?.id!
         );
+        replyCount += 1;
       }
     }
+
+    console.log("Replies seeded successfully.", replyCount);
   } catch (error) {
     console.error("Likes insert failed:", error);
   }
