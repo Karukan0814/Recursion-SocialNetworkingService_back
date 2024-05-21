@@ -1,7 +1,8 @@
 import { NotificationType } from "@prisma/client";
 import prisma from "./db";
 // import { faker } from "../../node_modules/@faker-js/faker/dist/types/index";
-const crypto = await import("node:crypto");
+// const crypto = await import("node:crypto");
+const crypto = require("crypto");
 import fs from "fs";
 import { exec } from "child_process";
 import os from "os";

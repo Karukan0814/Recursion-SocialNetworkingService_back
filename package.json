@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
-  "type": "module",
   "scripts": {
-    "dev": "vite-node src/server.ts",
-    "build": "vite build",
-    "seed": "vite-node src/seeders/allSeeders.ts"
+    "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "seed": "ts-node src/seeders/allSeeders.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,8 +32,7 @@
     "socket.io": "^4.7.5",
     "tsconfig-paths": "^4.2.0",
     "validator": "^13.11.0",
-    "vite": "^5.2.11",
-    "vite-node": "^1.6.0"
+    "vite": "^5.2.11"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
