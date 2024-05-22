@@ -98,7 +98,6 @@ jobs:
             unzip -o deploy.zip -d deploy
             cd deploy/deploy
             npm install --production
-            export NODE_OPTIONS=--max_old_space_size=4096
             npm run build
             pm2 stop all || true
             pm2 start dist/server.js
