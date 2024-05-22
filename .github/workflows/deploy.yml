@@ -89,6 +89,11 @@ jobs:
       - name: SSH into EC2 and deploy
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            sudo apt-get update
+            sudo apt-get install -y unzip
+            sudo apt-get install -y nodejs
+            sudo apt-get install -y npm
+            sudo npm install -g pm2
             unzip -o deploy.zip -d deploy
             cd deploy/deploy
             npm install --production
