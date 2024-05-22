@@ -43,6 +43,12 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Grant privileges to User
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DATABASE_USER_PASSWORD }}
+        run: |
+          docker exec mysql mysql -u root -p${{ secrets.DATABASE_USER_PASSWORD }} -e "GRANT ALL PRIVILEGES ON ${{ secrets.DATABASE_NAME }}.* TO '${{ secrets.DATABASE_USER }}'@'%'; FLUSH PRIVILEGES;"
+
       - name: Run Prisma migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_USER_URL }}
