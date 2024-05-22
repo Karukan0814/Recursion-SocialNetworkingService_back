@@ -59,7 +59,7 @@ jobs:
       - name: Prepare deployment package
         run: |
           mkdir deploy
-          cp -r * deploy
+          cp -r $(ls | grep -v deploy) deploy/
           zip -r deploy.zip deploy
 
       - name: Upload deployment package
