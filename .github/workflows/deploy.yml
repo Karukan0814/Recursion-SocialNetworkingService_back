@@ -109,6 +109,6 @@ jobs:
               npm run build
               pm2 stop all || true
               pm2 start dist/server.js
-EOF
+              EOF
             break || sleep 15
           done
