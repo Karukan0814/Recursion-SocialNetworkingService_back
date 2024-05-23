@@ -124,22 +124,24 @@ jobs:
             tar -xzvf deploy.tar.gz -C deploy
             cd deploy/deploy
             npm install --production
-            export DATABASE_URL=$DATABASE_URL
-            export DATABASE_NAME=$DATABASE_NAME
-            export DATABASE_USER=$DATABASE_USER
-            export DATABASE_USER_PASSWORD=$DATABASE_USER_PASSWORD
-            export DATABASE_HOST=$DATABASE_HOST
-            export JWT_SECRET=$JWT_SECRET
-            export SMTP_MAIL=$SMTP_MAIL
-            export SMTP_APP_PASS=$SMTP_APP_PASS
-            export VERIFICATION_LINK=$VERIFICATION_LINK
-            export ENCRYPT_KEY=$ENCRYPT_KEY
-            export IV_KEY=$IV_KEY
-            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY            
-            export AWS_REGION=$AWS_REGION            
-            export AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME            
-            export NODE_ENV=$NODE_ENV            
+            npx prisma generate
+            echo 'export DATABASE_URL=${DATABASE_URL}' >> ~/.profile
+            echo 'export DATABASE_NAME=${DATABASE_NAME}' >> ~/.profile
+            echo 'export DATABASE_USER=${DATABASE_USER}' >> ~/.profile
+            echo 'export DATABASE_USER_PASSWORD=${DATABASE_USER_PASSWORD}' >> ~/.profile
+            echo 'export DATABASE_HOST=${DATABASE_HOST}' >> ~/.profile
+            echo 'export JWT_SECRET=${JWT_SECRET}' >> ~/.profile
+            echo 'export SMTP_MAIL=${SMTP_MAIL}' >> ~/.profile
+            echo 'export SMTP_APP_PASS=${SMTP_APP_PASS}' >> ~/.profile
+            echo 'export VERIFICATION_LINK=${VERIFICATION_LINK}' >> ~/.profile
+            echo 'export ENCRYPT_KEY=${ENCRYPT_KEY}' >> ~/.profile
+            echo 'export IV_KEY=${IV_KEY}' >> ~/.profile
+            echo 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}' >> ~/.profile
+            echo 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}' >> ~/.profile
+            echo 'export AWS_REGION=${AWS_REGION}' >> ~/.profile
+            echo 'export AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}' >> ~/.profile
+            echo 'export NODE_ENV=${NODE_ENV}' >> ~/.profile
+            source ~/.profile
             pm2 stop all || true
             pm2 start dist/server.js
           EOF
