@@ -95,20 +95,19 @@ jobs:
       - name: SSH into EC2 and deploy
         run: |
           for i in {1..5}; do
-            ssh -o ConnectTimeout=60 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-              sudo apt-get update
-              sudo apt-get install -y unzip
-              sudo apt-get install -y nodejs
-              sudo apt-get install -y npm
-              sudo npm install -g pm2
-              sudo npm install -g typescript
-              unzip -o deploy.zip -d deploy
-              cd deploy/deploy
-              npm install --production
-              export NODE_OPTIONS=--max_old_space_size=4096
-              npm run build
-              pm2 stop all || true
-              pm2 start dist/server.js
-            EOF
-            break || sleep 15
+            ssh -o ConnectTimeout=60 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "sudo apt-get update && \
+              sudo apt-get install -y unzip && \
+              sudo apt-get install -y nodejs && \
+              sudo apt-get install -y npm && \
+              sudo npm install -g pm2 && \
+              sudo npm install -g typescript && \
+              unzip -o deploy.zip -d deploy && \
+              cd deploy/deploy && \
+              npm install --production && \
+              export NODE_OPTIONS=--max_old_space_size=4096 && \
+              npm run build && \
+              pm2 stop all || true && \
+              pm2 start dist/server.js" \
+            && break || sleep 15
           done
