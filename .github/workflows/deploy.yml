@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install TypeScript
+        run: npm install typescript --save-dev
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
@@ -81,25 +84,30 @@ jobs:
 
       - name: Set up SSH key
         run: echo "${{ secrets.EC2_KEY }}" > ec2_key.pem
+
       - name: Copy files to EC2
         run: |
           chmod 600 ec2_key.pem
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no deploy/deploy.zip ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/deploy.zip
+          for i in {1..5}; do
+            scp -o ConnectTimeout=60 -i ec2_key.pem -o StrictHostKeyChecking=no deploy/deploy.zip ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/deploy.zip && break || sleep 15
+          done
 
       - name: SSH into EC2 and deploy
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            sudo apt-get update
-            sudo apt-get install -y unzip
-            sudo apt-get install -y nodejs
-            sudo apt-get install -y npm
-            sudo npm install -g pm2
-            sudo npm install -g typescript
-            unzip -o deploy.zip -d deploy
-            cd deploy/deploy
-            npm install --production
-            export NODE_OPTIONS=--max_old_space_size=4096
-            npm run build
-            pm2 stop all || true
-            pm2 start dist/server.js
-          EOF
+          for i in {1..5}; do
+            ssh -o ConnectTimeout=60 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              sudo apt-get update
+              sudo apt-get install -y unzip
+              sudo apt-get install -y nodejs
+              sudo apt-get install -y npm
+              sudo npm install -g pm2
+              sudo npm install -g typescript # TypeScriptをインストール
+              unzip -o deploy.zip -d deploy
+              cd deploy/deploy
+              npm install --production
+              export NODE_OPTIONS=--max_old_space_size=4096 # メモリ制限を増加
+              npm run build
+              pm2 stop all || true
+              pm2 start dist/server.js
+            EOF && break || sleep 15
+          done
