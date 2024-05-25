@@ -141,8 +141,6 @@ jobs:
             export AWS_REGION=${AWS_REGION}
             export AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
             export NODE_ENV=${NODE_ENV}
-            npm install ts-node --save-dev
-            npm run seed
             pm2 stop all || true
             pm2 start dist/server.js
           EOF
