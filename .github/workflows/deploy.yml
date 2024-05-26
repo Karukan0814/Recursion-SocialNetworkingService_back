@@ -93,6 +93,6 @@ jobs:
             cd deploy/deploy
             npm install --production
             npx prisma generate
+            pm2 stop all || true
             npm run start
-
           EOF
