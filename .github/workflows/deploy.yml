@@ -94,5 +94,5 @@ jobs:
             npm install --production
             npx prisma generate
             pm2 stop all || true
-            npm run start
+            pm2 start dist/server.js --name server
           EOF
