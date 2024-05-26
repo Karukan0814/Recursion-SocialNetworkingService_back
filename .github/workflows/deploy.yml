@@ -25,7 +25,7 @@ jobs:
         run: npm install
 
       - name: Install TypeScript
-        run: npm install typescript --save-dev
+        run: npm install typescript ts-node --save-dev
 
       - name: Build the project
         run: |
