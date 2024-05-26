@@ -93,6 +93,22 @@ jobs:
             cd deploy/deploy
             npm install --production
             npx prisma generate
+            export DATABASE_URL=$DATABASE_URL
+            export DATABASE_NAME=$DATABASE_NAME
+            export DATABASE_USER=$DATABASE_USER
+            export DATABASE_USER_PASSWORD=$DATABASE_USER_PASSWORD
+            export DATABASE_HOST=$DATABASE_HOST
+            export JWT_SECRET=$JWT_SECRET
+            export SMTP_MAIL=$SMTP_MAIL
+            export SMTP_APP_PASS=$SMTP_APP_PASS
+            export VERIFICATION_LINK=$VERIFICATION_LINK
+            export ENCRYPT_KEY=$ENCRYPT_KEY
+            export IV_KEY=$IV_KEY
+            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY            
+            export AWS_REGION=$AWS_REGION            
+            export AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME            
+            export NODE_ENV=$NODE_ENV  
             pm2 stop all || true
             pm2 start dist/server.js --name server
           EOF
