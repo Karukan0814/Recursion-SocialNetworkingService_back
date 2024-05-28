@@ -235,6 +235,6 @@ export function getRandomObject<T>(arr: T[], num: number): T[] {
 
 // ランダムな遅延を生成する関数
 export function getRandomDelay() {
-  // return Math.floor(Math.random() * 30 * 60 * 1000); // 0から1800秒 (0から30分) の間のランダムなミリ秒
-  return Math.floor(Math.random() * 5 * 60 * 1000); // 0から1800秒 (0から30分) の間のランダムなミリ秒
+  return Math.floor(Math.random() * 30 * 60 * 1000); // 0から1800秒 (0から30分) の間のランダムなミリ秒
+  // return Math.floor(Math.random() * 5 * 60 * 1000); // 0から1800秒 (0から30分) の間のランダムなミリ秒
 }
