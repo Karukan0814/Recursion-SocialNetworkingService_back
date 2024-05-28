@@ -38,35 +38,36 @@ async function replySeeder() {
         const randomPostList = getRandomObject(mainPostOfOtherUsers, 1);
 
         const replyToPost = randomPostList[0];
-
-        const newRep = await prisma.post.create({
-          data: {
-            text: generatePostText(200),
-            img: generateRandomImageUrl(),
-            imgFileType: "image/jpeg", //piscumは通常、jpegファイルを返すため
-            userId: user.id,
-            replyToId: replyToPost.id,
-            scheduledAt: null,
-            sentAt: new Date(),
-          },
-          include: {
-            post: {
-              select: {
-                id: true,
-                userId: true,
+        if (replyToPost) {
+          const newRep = await prisma.post.create({
+            data: {
+              text: generatePostText(200),
+              img: generateRandomImageUrl(),
+              imgFileType: "image/jpeg", //piscumは通常、jpegファイルを返すため
+              userId: user.id,
+              replyToId: replyToPost.id,
+              scheduledAt: null,
+              sentAt: new Date(),
+            },
+            include: {
+              post: {
+                select: {
+                  id: true,
+                  userId: true,
+                },
               },
             },
-          },
-          // skipDuplicates: true,
-        });
+            // skipDuplicates: true,
+          });
 
-        await registerNotification(
-          NotificationType.REPLY,
-          newRep.post?.userId!,
-          newRep.userId,
-          newRep.post?.id!
-        );
-        replyCount += 1;
+          await registerNotification(
+            NotificationType.REPLY,
+            newRep.post?.userId!,
+            newRep.userId,
+            newRep.post?.id!
+          );
+          replyCount += 1;
+        }
       }
     }
 
