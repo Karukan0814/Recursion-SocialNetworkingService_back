@@ -67,8 +67,8 @@ async function likeSeeder(likeCount = LIKES_PER_USER, setRandamDelay = false) {
           // いいねしたことを通知する
           await registerNotification(
             NotificationType.Like,
-            user.id,
             likePost.userId,
+            user.id,
             likePost.id
           );
         }
