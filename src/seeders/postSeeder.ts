@@ -44,3 +44,17 @@ async function postSeeder(setRandom = false) {
 }
 
 export default postSeeder;
+
+async function runPostSeeder() {
+  try {
+    await postSeeder();
+
+    // 他のシーダー関数もここで呼び出す
+    console.log("post seeders executed successfully.");
+  } catch (error) {
+    console.error("Failed to execute seeders:", error);
+  }
+  process.exit();
+}
+
+runPostSeeder();
