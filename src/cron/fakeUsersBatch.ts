@@ -154,19 +154,26 @@ export async function sixHoursBatch() {
   }
 }
 // 一日に一回のバッチ処理
-cron.schedule("0 0 * * *", async () => {
+
+cron.schedule("*/5 * * * *", async () => {
   console.log("dayBatch");
   await dayBatch();
 });
 
+// cron.schedule("0 0 * * *", async () => {
+//   console.log("dayBatch");
+//   await dayBatch();
+// });
+
 // 5分に一回のバッチ処理
-cron.schedule("*/5 * * * *", async () => {
-  console.log("fiveMinBatch");
-  await fiveMinBatch();
-});
+// cron.schedule("*/5 * * * *", async () => {
+//   console.log("fiveMinBatch");
+//   await fiveMinBatch();
+// });
 
 // 6時間ごとのバッチ処理
-cron.schedule("0 */6 * * *", async () => {
-  console.log("sixHoursBatch");
-  await sixHoursBatch();
-});
+
+// cron.schedule("0 */6 * * *", async () => {
+//   console.log("sixHoursBatch");
+//   await sixHoursBatch();
+// });
