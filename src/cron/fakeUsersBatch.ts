@@ -165,7 +165,7 @@ export async function sixHoursBatch() {
 }
 // 一日に一回のバッチ処理
 
-cron.schedule("20 0 * * *", async () => {
+cron.schedule("0 8 * * *", async () => {
   console.log("dayBatchPost");
   await dayBatchPost();
 });
