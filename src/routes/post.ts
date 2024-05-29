@@ -38,6 +38,9 @@ router.get(
             lt: toDate,
           },
           replyToId: null,
+          sentAt: {
+            not: null, // 'sentAt'がnullではない=既に送信された投稿を取得
+          },
         },
         orderBy: [
           {
@@ -129,6 +132,9 @@ router.get(
             in: followingsIdList, // 複数のユーザーIDに紐づく投稿を取得
           },
           replyToId: null,
+          sentAt: {
+            not: null, // 'sentAt'がnullではない=既に送信された投稿を取得
+          },
         },
         orderBy: queryOrder,
         include: {
@@ -188,6 +194,9 @@ router.get(
         skip: skip,
         where: {
           replyToId,
+          sentAt: {
+            not: null, // 'sentAt'がnullではない=既に送信された投稿を取得
+          },
         },
         orderBy: queryOrder,
         include: {
