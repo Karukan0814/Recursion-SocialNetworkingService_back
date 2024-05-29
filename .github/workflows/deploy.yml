@@ -111,5 +111,4 @@ jobs:
             export NODE_ENV=$NODE_ENV  
             pm2 stop all || true
             pm2 start dist/server.js --name server
-            pm2 start dist/cron/fakeUsersBatch.js --name batch-job
           EOF
