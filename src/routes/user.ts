@@ -64,7 +64,13 @@ router.post("/login", async (req: Request, res: Response) => {
           expiresIn: "7d",
         });
 
-        const { password, ...userWithoutPass } = user;
+        const {
+          password,
+          email,
+          fakeFlag,
+          emailVerifiedAt,
+          ...userWithoutSensitiveInfo
+        } = user;
         const followerIds = followers.map((follower) => follower.followerId);
         const followingIds = followings.map(
           (following) => following.followingId
@@ -72,7 +78,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
         res.status(200).json({
           user: {
-            ...userWithoutPass,
+            ...userWithoutSensitiveInfo,
             followers: followerIds,
             followings: followingIds,
           },
@@ -117,7 +123,7 @@ router.post("/register", async (req: Request, res: Response) => {
       },
     });
 
-    //TODO GmailのSMTPサーバーを利用し、Verificationメールを送信する
+    //GmailのSMTPサーバーを利用し、Verificationメールを送信する
     // Nodemailer Transportの設定
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -201,52 +207,23 @@ router.post("/verify", async (req: Request, res: Response) => {
     );
     //トークンとユーザー情報返却
 
-    const { password, ...userWithoutPass } = updatedUser;
+    const {
+      password,
+      email,
+      emailVerifiedAt,
+      fakeFlag,
+      ...userWithoutSensitiveInfo
+    } = updatedUser;
 
     //todo 成功時は、localhost:5173/に遷移させたい
-    return res.status(200).json({ token: loginToken, user: userWithoutPass });
+    return res
+      .status(200)
+      .json({ token: loginToken, user: userWithoutSensitiveInfo });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error registering user" });
   }
 });
-
-// ユーザー削除機能
-// router.delete(
-//   "/delete",
-//   authenticateToken,
-//   async (req: Request, res: Response) => {
-//     try {
-//       const { id, uid } = req.body;
-//       console.log("/eatfish_back/search/user", { id, uid });
-
-//       if (!id && !uid) {
-//         return res.status(400).json({ error: "id or uid is required" });
-//       }
-//       const whereParam: { [key: string]: any } = {};
-//       //idが指定されていればパラメータに設定
-//       if (id) {
-//         whereParam.id = id;
-//       }
-
-//       //uidが指定されていればパラメータに設定
-//       if (uid) {
-//         whereParam.uid = uid;
-//       }
-
-//       const deletedUser = await prisma.user.deleteMany({
-//         where: whereParam,
-//       });
-
-//       res
-//         .status(200)
-//         .send(`User with UID:id( ${id}),uid (${uid}) deleted successfully`);
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).send("Error deleting user");
-//     }
-//   }
-// );
 
 // ユーザー情報変更機能
 router.put(
@@ -256,14 +233,14 @@ router.put(
 
   async (req: Request, res: Response) => {
     try {
-      let { email, name, introduction } = req.body;
+      let { name, introduction } = req.body;
       let userId = parseInt(req.body.userId as string);
 
       if (!userId && !name) {
         return res.status(400).json({ error: "userId or name is required" });
       }
       const userImg = req.file; // multerがファイルを処理する
-      console.log({ userId, email, name, userImg, introduction });
+      console.log({ userId, name, userImg, introduction });
 
       // S3に画像をアップロード
       let imgURL = null;
@@ -307,18 +284,22 @@ router.put(
         });
         console.log({ followers });
         // パスワード情報を除外して返却
-        const { password, emailVerifiedAt, ...userWithoutPass } = updatedUser;
+        const {
+          password,
+          email,
+          emailVerifiedAt,
+          fakeFlag,
+          ...userWithoutSensitiveInfo
+        } = updatedUser;
         const followerIds = followers.map((follower) => follower.followerId);
         const followingIds = followings.map(
           (following) => following.followingId
         );
 
         res.status(200).json({
-          // user: {
-          ...userWithoutPass,
+          ...userWithoutSensitiveInfo,
           followers: followerIds,
           followings: followingIds,
-          // },
         });
       }
     } catch (error) {
@@ -387,9 +368,14 @@ router.get(
       }
       // console.log({ posts });
       const followerListWithoutPass = followers.map((follower) => {
-        const { password, email, emailVerifiedAt, ...followerWithoutPass } =
-          follower.follower;
-        return followerWithoutPass;
+        const {
+          password,
+          email,
+          emailVerifiedAt,
+          fakeFlag,
+          ...followerWithoutSensitiveInfo
+        } = follower.follower;
+        return followerWithoutSensitiveInfo;
       });
 
       res.status(200).json(followerListWithoutPass);
@@ -436,13 +422,18 @@ router.get(
       }
       // console.log({ posts });
 
-      const followingListWithoutPass = followings.map((follower) => {
-        const { password, email, emailVerifiedAt, ...followerWithoutPass } =
-          follower.following;
-        return followerWithoutPass;
+      const followingListWithoutSensitiveInfo = followings.map((follower) => {
+        const {
+          password,
+          email,
+          emailVerifiedAt,
+          fakeFlag,
+          ...followerWithoutSensitiveInfo
+        } = follower.following;
+        return followerWithoutSensitiveInfo;
       });
 
-      res.status(200).json(followingListWithoutPass);
+      res.status(200).json(followingListWithoutSensitiveInfo);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error searching posts");
@@ -479,14 +470,20 @@ router.get(
         });
         console.log({ followers });
         // パスワード情報を除外して返却
-        const { password, ...userWithoutPass } = userInfo;
+        const {
+          password,
+          email,
+          emailVerifiedAt,
+          fakeFlag,
+          ...userWithoutSensitiveInfo
+        } = userInfo;
         const followerIds = followers.map((follower) => follower.followerId);
         const followingIds = followings.map(
           (following) => following.followingId
         );
 
         res.status(200).json({
-          ...userWithoutPass,
+          ...userWithoutSensitiveInfo,
           followers: followerIds,
           followings: followingIds,
         });
@@ -571,6 +568,11 @@ router.get(
       const skip = (page - 1) * count; // ページ番号からskip数を計算
 
       const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          userImg: true,
+        },
         take: count,
         skip: skip,
         where: {
