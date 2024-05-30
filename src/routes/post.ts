@@ -1,11 +1,9 @@
 import express, { Request, Response } from "express";
 
-// import { NotificationType, PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
 import { compressVideo, hashFilename, registerNotification } from "../lib/util";
 import { s3, upload } from "../lib/imgHandler";
-// import { NotificationType } from "../../node_modules/.prisma/client/index";
 import { NotificationType } from "@prisma/client";
 
 //ポスト関連API
@@ -22,15 +20,12 @@ router.get(
     try {
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
-      const whereClause: any = {};
 
       const toDate = new Date();
       const fromDate = new Date(toDate.getTime() - 24 * 3600 * 1000); // 24時間前の日時
 
       //その日に最も「いいね」された投稿を降順取得
 
-      let skip = (page - 1) * count; // ページ番号からskip数を計算=スキップして取得しないポスト数
       const posts = await prisma.post.findMany({
         where: {
           createdAt: {
@@ -57,11 +52,16 @@ router.get(
         include: {
           likes: true, // いいね数を含める
           replies: true,
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
         },
       });
 
-      // console.log(posts);
       // 投稿がない場合は空の配列を返す
       if (!posts.length) {
         return res.status(200).json([]);
@@ -83,9 +83,7 @@ router.get(
     try {
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -100,19 +98,23 @@ router.get(
           id: userId,
         },
         include: {
-          followings: {
+          followers: {
             include: {
-              following: true, // フォローしているユーザーの詳細情報を取得
+              following: true,
+
+              // フォローしているユーザーの詳細情報を取得
             },
           },
         },
       });
 
+      console.log(userWithFollowings?.followers);
+
       // フォローしているユーザーのリストを抽出
       const followingsIdList = userWithFollowings
-        ? userWithFollowings.followings.map((f) => f.following.id)
+        ? userWithFollowings.followers.map((f) => f.following.id)
         : [];
-      // console.log({ followingsIdList });
+      console.log({ followingsIdList });
       followingsIdList.push(userId); //ユーザー本人のidも追加
 
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
@@ -139,9 +141,15 @@ router.get(
         orderBy: queryOrder,
         include: {
           post: true,
-          user: true,
           replies: true,
           likes: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
         },
       });
 
@@ -200,7 +208,14 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
+
           likes: true,
           replies: true,
           post: true, // 親ポストを含める
@@ -229,16 +244,13 @@ router.get(
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("Invalid userId", userId);
+        console.error("Invalid userId", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
 
       // replyToIdの存在と型を検証
       const replyToId: number = parseInt(req.query.replyToId as string);
-      // if (!isNaN(replyToId) || replyToId > 0) {
-
-      // }
 
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
 
@@ -258,7 +270,13 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
           likes: true,
           replies: true,
           post: true, // 親ポストを含める
@@ -319,7 +337,14 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
+
           likes: true,
           replies: true,
           post: true, // 親ポストを含める
@@ -377,10 +402,22 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
           post: {
             include: {
-              user: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  userImg: true,
+                },
+              },
               likes: true,
               replies: {
                 select: { id: true }, // only fetches reply IDs
@@ -475,7 +512,13 @@ router.post(
           sentAt,
         },
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
           likes: true,
           replies: true,
           post: true,
@@ -521,19 +564,37 @@ router.get(
         include: {
           post: {
             include: {
-              user: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  userImg: true,
+                },
+              },
               likes: true,
               replies: true,
             },
           },
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
           likes: true,
           replies: {
             orderBy: {
               createdAt: "desc",
             },
             include: {
-              user: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  userImg: true,
+                },
+              },
               likes: true,
             },
           },
@@ -597,7 +658,13 @@ router.post(
             include: {
               post: {
                 include: {
-                  user: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      userImg: true,
+                    },
+                  },
                 },
               },
             },
@@ -673,7 +740,13 @@ router.get(
         },
         orderBy: queryOrder,
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userImg: true,
+            },
+          },
           likes: true,
           replies: true,
           post: true, // 親ポストを含める
