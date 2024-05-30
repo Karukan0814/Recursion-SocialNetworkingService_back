@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 
 import { authenticateToken } from "../lib/authenticateToken";
 import prisma from "../lib/db";
-import { getUnreadNotificationsCount, registerNotification } from "../lib/util";
+import { getUnreadNotificationsCount } from "../lib/util";
 
 //通知関連API
 const router = express.Router();
@@ -79,12 +79,10 @@ router.get(
         },
       });
 
-      console.log(recentNotifications);
       // 投稿がない場合は空の配列を返す
       if (!recentNotifications.length) {
         return res.status(200).json([]);
       }
-      // console.log({ posts });
       res.status(200).json(recentNotifications);
     } catch (error) {
       console.error(error);
@@ -104,13 +102,10 @@ router.get(
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
         console.log("userId不正", userId);
-
         return res.status(400).json({ error: "userId is required" });
       }
 
       const unreadNotificationCount = await getUnreadNotificationsCount(userId);
-
-      console.log(unreadNotificationCount);
 
       res.status(200).json(unreadNotificationCount);
     } catch (error) {
