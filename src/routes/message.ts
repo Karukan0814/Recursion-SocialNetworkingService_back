@@ -22,12 +22,6 @@ router.get(
 
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
 
-      let queryOrder: any = [
-        {
-          createdAt: "desc", // 新着順に並べ替える
-        },
-      ];
-
       //そのユーザーがフォローしているユーザーリストを取得する
       const conversations = await prisma.conversation.findMany({
         orderBy: { id: "desc" },
@@ -85,11 +79,6 @@ router.get(
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
 
       const skip = (page - 1) * count; // ページ番号からskip数を計算
-      let queryOrder: any = [
-        {
-          createdAt: "desc", // 新着順に並べ替える
-        },
-      ];
 
       //そのユーザーがフォローしているユーザーリストを取得する
       const conversations = await prisma.conversation.findMany({
@@ -152,9 +141,6 @@ router.get(
         where: {
           conversationId,
         },
-        // include: {
-        //   sender: true,
-        // },
       });
       const decryptedMessages = messages.map((message) => {
         message.text = decrypt(message.text);
@@ -174,20 +160,8 @@ router.post(
   "/register/conversation",
   authenticateToken,
   async (req: Request, res: Response) => {
-    let {
-      fromUserId,
-      toUserId,
+    let { fromUserId, toUserId, token } = req.body;
 
-      token,
-      // firstmessage,
-    } = req.body;
-    console.log({
-      fromUserId,
-      toUserId,
-
-      token,
-      // firstmessage,
-    });
     try {
       //fromUserIdが空でないか
       if (!fromUserId || typeof fromUserId !== "number") {
@@ -214,14 +188,12 @@ router.post(
               user: {
                 select: {
                   id: true,
-
                   name: true,
                   userImg: true,
                 },
               },
             },
           },
-          // messages: true,
         },
       });
       res.status(200).json(conversation);
@@ -257,7 +229,6 @@ router.post(
         return;
       }
       const encryptedText = encrypt(text);
-      console.log("encryptedText", encryptedText);
 
       const newMessage = await prisma.message.create({
         data: {
