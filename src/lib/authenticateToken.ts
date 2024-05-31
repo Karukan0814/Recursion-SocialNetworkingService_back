@@ -20,7 +20,7 @@ export const authenticateToken = (
       jwt.verify(token, process.env.JWT_SECRET || "");
       next();
     } catch (err) {
-      console.log("Invalid token");
+      console.error(`Invalid token: ${token}`);
       return res.status(403).json({ error: "Invalid token" });
     }
   } else {

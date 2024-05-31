@@ -20,12 +20,10 @@ router.get(
       const toDate = new Date();
       const fromDate = new Date(toDate.getTime() - backDate); // 何日前までさかのぼるか
 
-      console.log({ backDate });
-
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -101,7 +99,7 @@ router.get(
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
         return res.status(400).json({ error: "userId is required" });
       }
 

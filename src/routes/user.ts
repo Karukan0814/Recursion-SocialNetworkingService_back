@@ -19,7 +19,6 @@ const router = express.Router();
 router.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    console.log("/login", { email, password });
 
     if (!email) {
       return res.status(400).json({ error: "email is required" });
@@ -38,25 +37,21 @@ router.post("/login", async (req: Request, res: Response) => {
         email: email,
       },
     });
-    console.log(user);
 
     const followings = await prisma.follows.findMany({
       where: {
         followerId: user?.id,
       },
     });
-    console.log({ followings });
     const followers = await prisma.follows.findMany({
       where: {
         followingId: user?.id,
       },
     });
-    console.log({ followers });
 
     if (user) {
       const passwordValid = await bcrypt.compare(password, user.password);
       const dbPass = user.password;
-      console.log({ passwordValid, password, dbPass });
       if (passwordValid) {
         // JWT 生成と応答
         // ユーザーが認証された場合、JWTを生成
@@ -240,7 +235,6 @@ router.put(
         return res.status(400).json({ error: "userId or name is required" });
       }
       const userImg = req.file; // multerがファイルを処理する
-      console.log({ userId, name, userImg, introduction });
 
       // S3に画像をアップロード
       let imgURL = null;
@@ -257,7 +251,6 @@ router.put(
           .promise();
 
         imgURL = s3Result.Location; // アップロード後のS3 URL
-        console.log("imgURL", imgURL);
       }
 
       const updateData = {
@@ -276,13 +269,11 @@ router.put(
             followerId: updatedUser?.id,
           },
         });
-        console.log({ followings });
         const followers = await prisma.follows.findMany({
           where: {
             followingId: updatedUser?.id,
           },
         });
-        console.log({ followers });
         // パスワード情報を除外して返却
         const {
           password,
@@ -322,7 +313,7 @@ router.post("/checkToken", async (req: Request, res: Response) => {
       // 有効なトークンの場合
       return res.status(200).json({ valid: true });
     } catch (err) {
-      console.log("Invalid token");
+      console.error(`Invalid token:${token}`);
       // 無効なトークンの場合
       return res.status(403).json({ valid: false, error: "Invalid token" });
     }
@@ -366,7 +357,6 @@ router.get(
       if (!followers.length) {
         return res.status(200).json([]);
       }
-      // console.log({ posts });
       const followerListWithoutPass = followers.map((follower) => {
         const {
           password,
@@ -420,7 +410,6 @@ router.get(
       if (!followings.length) {
         return res.status(200).json([]);
       }
-      // console.log({ posts });
 
       const followingListWithoutSensitiveInfo = followings.map((follower) => {
         const {
@@ -454,7 +443,6 @@ router.get(
           id: userId,
         },
       });
-      console.log(userInfo);
 
       if (userInfo) {
         const followings = await prisma.follows.findMany({
@@ -462,13 +450,11 @@ router.get(
             followerId: userInfo?.id,
           },
         });
-        console.log({ followings });
         const followers = await prisma.follows.findMany({
           where: {
             followingId: userInfo?.id,
           },
         });
-        console.log({ followers });
         // パスワード情報を除外して返却
         const {
           password,
@@ -487,8 +473,6 @@ router.get(
           followers: followerIds,
           followings: followingIds,
         });
-
-        // console.log({ posts });
       } else {
         res.status(500).send("No User");
       }
@@ -540,7 +524,6 @@ router.post("/follow", async (req: Request, res: Response) => {
       },
     });
     const followings = newFollowings.map((follow) => follow.followingId);
-    console.log(followings);
     res.status(200).json(followings);
   } catch (error) {
     console.error(error);
@@ -554,13 +537,12 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      console.log("/search/keyword");
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
 
-      console.log(req.query);
       const keyword = req.query.keyword as string;
       if (!keyword) {
+        console.error("keyword is required");
         return res.status(400).json({ error: "keyword is required" });
       }
       const keywordPattern = `%${keyword}%`; //SQL検索用
@@ -583,7 +565,6 @@ router.get(
         },
       });
 
-      console.log(users);
       res.status(200).json(users);
     } catch (error) {
       console.error(error);

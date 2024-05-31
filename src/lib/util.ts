@@ -45,7 +45,6 @@ export async function registerMessage(
 ) {
   try {
     const encryptedText = encrypt(text);
-    console.log("encryptedText", encryptedText);
     const newMessage = await prisma.message.create({
       data: {
         text: encryptedText,
@@ -76,9 +75,7 @@ export async function registerMessage(
 
     // 複合化されたテキストでメッセージオブジェクトを更新
     const decryptedText = decrypt(newMessage.text); // 暗号化されたテキストを複合化
-    console.log("decryptedText", decryptedText);
     newMessage.text = decryptedText;
-    console.log("newMessage", newMessage);
 
     return newMessage;
   } catch (error) {
@@ -171,10 +168,8 @@ export async function compressVideo(video: Express.Multer.File) {
   const tempInPath = path.join(tempDir, `input_${Date.now()}.${extension}`);
   const tempOutPath = path.join(tempDir, `output_${Date.now()}.${extension}`);
 
-  console.log(tempInPath, tempOutPath);
   // ファイルシステムに動画を一時保存
   fs.writeFileSync(tempInPath, video.buffer);
-  console.log(tempInPath);
   // ファイルシステムに動画を一時保存
   fs.writeFileSync(tempInPath, video.buffer);
 
@@ -204,7 +199,6 @@ export async function getUnreadNotificationsCount(userId: number) {
       },
     ],
   });
-  console.log("getUnreadNotificationsCount", unreadNotificationCount);
   return unreadNotificationCount;
 }
 

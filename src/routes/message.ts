@@ -11,11 +11,10 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -67,11 +66,10 @@ router.get(
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
 
-      console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -129,7 +127,7 @@ router.get(
         req.query.conversationId as string
       );
       if (isNaN(conversationId) || conversationId <= 0) {
-        console.log("Invalid conversationId", conversationId);
+        console.error("Invalid conversationId", conversationId);
 
         return res.status(400).json({ error: "conversationId is required" });
       }
@@ -210,11 +208,7 @@ router.post(
   authenticateToken,
   async (req: Request, res: Response) => {
     let { conversationId, senderId, text } = req.body;
-    console.log({
-      conversationId,
-      senderId,
-      text,
-    });
+
     try {
       //fromUserIdが空でないか
       if (!conversationId || typeof conversationId !== "number") {

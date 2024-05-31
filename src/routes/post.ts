@@ -66,7 +66,6 @@ router.get(
       if (!posts.length) {
         return res.status(200).json([]);
       }
-      // console.log({ posts });
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -87,7 +86,7 @@ router.get(
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -108,13 +107,10 @@ router.get(
         },
       });
 
-      console.log(userWithFollowings?.followers);
-
       // フォローしているユーザーのリストを抽出
       const followingsIdList = userWithFollowings
         ? userWithFollowings.followers.map((f) => f.following.id)
         : [];
-      console.log({ followingsIdList });
       followingsIdList.push(userId); //ユーザー本人のidも追加
 
       //そのユーザーリスト＋ユーザー本人の投稿ポストを最新順で取得
@@ -169,13 +165,11 @@ router.get(
     try {
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("userId不正", userId);
+        console.error("userId不正", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -183,7 +177,7 @@ router.get(
       // replyToIdの存在と型を検証
       const replyToId: number = parseInt(req.query.replyToId as string);
       if (isNaN(replyToId) || replyToId <= 0) {
-        console.log("replyToId不正", replyToId);
+        console.error("replyToId不正", replyToId);
 
         return res.status(400).json({ error: "replyToId is required" });
       }
@@ -240,7 +234,6 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
@@ -283,7 +276,6 @@ router.get(
         },
       });
 
-      // console.log(posts);
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -302,11 +294,10 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("Invalid userId", userId);
+        console.error("Invalid userId", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -351,7 +342,6 @@ router.get(
         },
       });
 
-      // console.log(posts);
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -370,11 +360,10 @@ router.get(
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
       const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       // userIdの存在と型を検証
       const userId: number = parseInt(req.query.userId as string);
       if (isNaN(userId) || userId <= 0) {
-        console.log("Invalid userId", userId);
+        console.error("Invalid userId", userId);
 
         return res.status(400).json({ error: "userId is required" });
       }
@@ -427,7 +416,6 @@ router.get(
         },
       });
 
-      console.log(posts);
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -447,7 +435,6 @@ router.post(
     replyToId = parseInt(req.body.replyToId as string);
 
     const img = req.file; // multerがファイルを処理する
-    console.log({ text, userId, img, replyToId, scheduledAt });
 
     try {
       if (!text || typeof text !== "string") {
@@ -498,7 +485,6 @@ router.post(
           .promise();
 
         imgURL = s3Result.Location; // アップロード後のS3 URL
-        console.log("imgURL", imgURL);
       }
 
       const result = await prisma.post.create({
@@ -551,7 +537,7 @@ router.get(
       // postIdの存在と型を検証
       const postId: number = parseInt(req.query.postId as string);
       if (isNaN(postId) || postId <= 0) {
-        console.log("postId不正", postId);
+        console.error("postId不正", postId);
 
         return res.status(400).json({ error: "postId is required" });
       }
@@ -600,7 +586,6 @@ router.get(
           },
         },
       });
-      // console.log(post);
       res.status(200).json(post);
     } catch (error) {
       console.error(error);
@@ -616,7 +601,6 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       let { postId, userId, like } = req.body;
-      // console.log("/like/register", { postId, userId, like });
       // postIdと userId を数値に変換（失敗した場合は NaN が返される）
       postId = parseInt(postId);
       userId = parseInt(userId);
@@ -645,7 +629,6 @@ router.post(
         },
       });
       const likeExist = likeInfoList.length > 0;
-      // console.log({ postId, userId, like, likeExist });
 
       if (like) {
         if (!likeExist) {
@@ -710,12 +693,9 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      console.log("/search/keyword");
       const count: number = parseInt(req.query.count as string) || 20; // クエリパラメータ "count" を数値に変換し、デフォルトは20
       const page: number = parseInt(req.query.page as string) || 1; // ページ番号
-      const orderBy: string = (req.query.orderBy as string) || "createdAt"; // デフォルトはcreatedAt
 
-      // console.log(req.query);
       const keyword = req.query.keyword as string;
       if (!keyword) {
         return res.status(400).json({ error: "keyword is required" });
@@ -753,7 +733,6 @@ router.get(
         },
       });
 
-      // console.log(posts);
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -770,7 +749,6 @@ router.delete(
     try {
       const postId = parseInt(req.query.postId as string); // リクエストから記事のIDを取得
       const userId = parseInt(req.query.userId as string); // リクエストからユーザーのIDを取得
-      console.log("/delete/post", { postId, userId });
 
       if (!postId || !userId) {
         res.status(400).json({ error: " postId and userId are required" });
@@ -782,7 +760,6 @@ router.delete(
           id: postId,
         },
       });
-      // console.log("post", post);
       if (!post) {
         res.status(404).json({ error: `post with ID: ${postId} not found` });
         return;
@@ -808,7 +785,6 @@ router.delete(
             postId,
           },
         });
-        console.log("いいね削除");
 
         await prisma.post.delete({
           where: {
@@ -821,12 +797,9 @@ router.delete(
       if (post.img) {
         try {
           const url = new URL(post.img); // URLオブジェクトを作成
-          console.log({ url });
           const bucketName = url.hostname.split(".")[0]; // ホスト名からバケット名を抽出
-          console.log({ bucketName });
 
           const key = url.pathname.substring(1); // パス名から最初の '/' を取り除いてキーを取得
-          console.log({ key });
 
           const params = {
             Bucket: bucketName,

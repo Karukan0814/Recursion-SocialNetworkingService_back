@@ -42,8 +42,6 @@ const io = new Server(server, {
 io.use(authenticateSocketToken);
 
 io.on("connection", (socket: Socket) => {
-  console.log("A user connected");
-
   socket.on("userConnected", async (userid) => {
     console.log(`User connected with ID: ${userid}`);
     socket.userid = userid;
@@ -60,8 +58,6 @@ io.on("connection", (socket: Socket) => {
   });
 
   socket.on("sendMessage", async (message, conversationId, senderId) => {
-    console.log("sendMessage");
-
     if (!isLength(message, { min: 1, max: 200 })) {
       throw new Error("Message length must be between 1 and 200 characters.");
     }
@@ -79,7 +75,6 @@ io.on("connection", (socket: Socket) => {
       senderId
     );
 
-    console.log("savedMessage", savedMessage);
     io.to(conversationId).emit("receiveMessage", savedMessage);
   });
 
