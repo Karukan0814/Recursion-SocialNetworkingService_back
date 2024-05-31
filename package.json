@@ -7,7 +7,8 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "seed": "npx ts-node src/seeders/allSeeders.ts"
+    "seed": "npx ts-node src/seeders/allSeeders.ts",
+    "batch": "npx ts-node  src/cron/fakeUsersBatch.ts"
   },
   "keywords": [],
   "author": "",

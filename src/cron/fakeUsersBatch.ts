@@ -19,32 +19,7 @@ import {
 import postSeeder from "../seeders/postSeeder";
 import replySeeder from "../seeders/replySeeder";
 
-// 一日に一度回すべきバッチ
-export async function dayBatchPost() {
-  try {
-    // 【要件】各ユーザーは毎日ランダムなテキストジェネレーターを使用した内容の異なる 3 つの投稿を行う
-    await postSeeder(true);
-  } catch (e: any) {
-    console.error(e);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-export async function dayBatchReply() {
-  try {
-    // 【要件】1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
-    await replySeeder();
-  } catch (e: any) {
-    console.error(e);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-export async function fiveMinBatch() {
+export async function sendScheduledPost() {
   try {
     // scheduledAtが現在時刻をすぎているPostを探して、sentAtに現在時刻を入れる
     const now = new Date();
@@ -69,8 +44,9 @@ export async function fiveMinBatch() {
   }
 }
 
-async function likeInfluencerPosts(likeCount = LIKES_PER_USER) {
+export async function actionsByFakeUsers() {
   try {
+    console.log("actionsByFakeUsers -start");
     // フェイクユーザーのユーザーリストを取得
     const testUserList = await prisma.user.findMany({
       where: {
@@ -79,112 +55,16 @@ async function likeInfluencerPosts(likeCount = LIKES_PER_USER) {
       include: {
         followings: true,
       },
-    });
-    console.log("testUserList", testUserList.length);
-
-    // const specificUser = testUserList.find(
-    //   (user: { id: number }) => user.id === 1798
-    // );
-    // console.log("specificUser", specificUser?.followings.length);
-
-    // フェイクユーザーのリストからフォロワーの数が100を超えるユーザーを取得
-    const influencerList = testUserList.filter(
-      (user: { followings: string | any[] }) => {
-        return user.followings.length >= NUMBER_OF_INFLUENCERS_FOLLOWERS;
-      }
-    );
-    console.log("influencerList", influencerList.length);
-
-    // インフルエンサーのIDリストを作成
-    const influencerIds = influencerList.map((influencer) => influencer.id);
-
-    // インフルエンサーになっているユーザーの２４時間以内のポストリストを取得
-    const now = new Date();
-    const postsWithin24hours = await prisma.post.findMany({
-      where: {
-        userId: {
-          in: influencerIds,
-        },
-        sentAt: {
-          gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // 24時間以内のポスト
-        },
-      },
-    });
-    console.log("postsWithin24hours.length", postsWithin24hours.length);
-
-    // 各ユーザーがランダムにインフルエンサーのポストから４件選択して「いいね」する
-    let allInfluencersLikeCount = 0;
-    for (let user of testUserList) {
-      // インフルエンサーのポストをランダムに4件取得
-      const randomInfluencerPosts = getRandomObject(
-        postsWithin24hours,
-        Math.ceil(LIKES_PER_INFLUENCER / 5)
-      );
-
-      const data: Array<any> = [];
-      for (let likePost of randomInfluencerPosts) {
-        data.push({
-          postId: likePost.id,
-          userId: user.id,
-        });
-      }
-
-      // 選択したインフルエンサーのポストにいいねを登録
-      const newLike = await prisma.postLike.createMany({
-        data,
-        skipDuplicates: true,
-      });
-      allInfluencersLikeCount += newLike.count;
-
-      // 通知を飛ばす
-      for (let post of randomInfluencerPosts) {
-        await registerNotification(
-          NotificationType.Like,
-          user.id,
-          post.userId,
-          post.id
-        );
-      }
-    }
-    console.log(
-      `Success sending likes to influencers!`,
-      allInfluencersLikeCount
-    );
-  } catch (error) {
-    console.error("Error in likeInfluencerPosts:", error);
-  }
-}
-export async function sixHoursBatch() {
-  // 一日のおおよそ5回＝6時間ごとに回るバッチ
-  try {
-    // 【要件】このバッチが一回回るごとに各フェイクユーザーはランダムに選択した１つのポストに「いいね」する＝一日に５ポストにいいねする
-    await likeSeeder(1, true);
-
-    // 【要件】インフルエンサーアカウントの投稿２０件にいいねする＝バッチ一回あたり20/5=4件のインフルエンサーのポストにいいねする
-    // →ランダムに投稿に遅延時間を設ける＝自然にみえる挙動
-    await likeInfluencerPosts();
-  } catch (error) {
-    console.error("Error sending likes to posts:", error);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-export async function batch5minPost() {
-  try {
-    console.log("batch5minPost -start");
-    const testUserList = await prisma.user.findMany({
-      where: {
-        fakeFlag: true,
-      },
     }); //登録されているフェイクのユーザーのリストを取得
 
     // 【要件】各ユーザーは毎日ランダムなテキストジェネレーターを使用した内容の異なる 3 つの投稿を行う
-    // →5分ごとのバッチのついでに１０人が３ポストすればいい
+    // →5分ごとのバッチのついでに7人が３ポストすればいい
 
     // 指定の数だけランダムにユーザーを取得する
-    const pickedUpUsers = getRandomObject<User>(testUserList, 10);
+    const pickedUpUsers = getRandomObject<User>(
+      testUserList,
+      Math.ceil(testUserList.length / (12 * 24))
+    );
 
     const newPosts: Array<any> = [];
 
@@ -255,6 +135,68 @@ export async function batch5minPost() {
     });
 
     console.log(`${posts.count} of  posts were sent!`);
+
+    // 【要件】各フェイクユーザーは一日当たりランダムに選択した５つのポストに「いいね」する
+
+    // フェイクユーザーのリストからフォロワーの数が100を超えるユーザーを取得
+    const influencerList = testUserList.filter(
+      (user: { followings: string | any[] }) => {
+        return user.followings.length >= NUMBER_OF_INFLUENCERS_FOLLOWERS;
+      }
+    );
+
+    // インフルエンサーのIDリストを作成
+    const influencerIds = influencerList.map((influencer) => influencer.id);
+
+    // インフルエンサーになっているユーザーの２４時間以内のポストリストを取得
+    const influencesrPosts = testPostList.filter((post) =>
+      influencerIds.includes(post.userId)
+    );
+    console.log("influencesrPosts", influencesrPosts.length);
+
+    // 先ほどランダムに選択したユーザーを使う
+    const likeData: Array<any> = [];
+    for (let user of pickedUpUsers) {
+      // ランダムに５つの投稿をピックアップする
+      const likePosts = getRandomObject<Post>(testPostList, LIKES_PER_USER);
+
+      for (let likePost of likePosts) {
+        likeData.push({
+          postId: likePost.id,
+          userId: user.id,
+        });
+      }
+
+      // インフルエンサーの投稿からランダムに20の投稿をピックアップする
+      const pickedUpInfluencersPosts = getRandomObject<Post>(
+        testPostList,
+        LIKES_PER_INFLUENCER
+      );
+      for (let likePost of pickedUpInfluencersPosts) {
+        likeData.push({
+          postId: likePost.id,
+          userId: user.id,
+        });
+      }
+
+      // いいねしたことを通知する
+      for (let post of likePosts) {
+        await registerNotification(
+          NotificationType.Like,
+          post.userId,
+          user.id,
+          post.id
+        );
+      }
+    }
+
+    // いいねを登録
+    const newLike = await prisma.postLike.createMany({
+      data: likeData,
+      skipDuplicates: true,
+    });
+
+    console.log(`${newLike.count} of  likes were sent!`);
   } catch (e: any) {
     console.error(e);
     process.exit(1);
@@ -263,42 +205,9 @@ export async function batch5minPost() {
   }
 }
 
-export async function batchReplyPost() {
-  try {
-    // 【要件】各ユーザーは毎日ランダムなテキストジェネレーターを使用した内容の異なる 3 つの投稿を行う
-
-    // 【要件】1つのランダムに選ばれたメインの投稿に対して返信をします。=毎日 1 つのランダムなメイン投稿に返信する
-    await replySeeder();
-  } catch (e: any) {
-    console.error(e);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// // 一日に一回のバッチ処理
-
-// cron.schedule("0 8 * * *", async () => {
-//   console.log("dayBatchPost");
-//   await dayBatchPost();
-// });
-
-// cron.schedule("0 12 * * *", async () => {
-//   console.log("dayBatchReply");
-//   await dayBatchReply();
-// });
-
-// 5分に一回のバッチ処理
+// 5分に一回のバッチ処理 12*24=288回/日回るバッチ
 cron.schedule("*/5 * * * *", async () => {
   console.log("fiveMinBatch");
-  await fiveMinBatch();
-  await batch5minPost();
-});
-
-// 6時間ごとのバッチ処理
-
-cron.schedule("0 */6 * * *", async () => {
-  console.log("sixHoursBatch");
-  await sixHoursBatch();
+  await sendScheduledPost(); //スケジュールされたポストを送信
+  await actionsByFakeUsers(); //ランダムに選択されたユーザーが投稿・リプライする
 });
