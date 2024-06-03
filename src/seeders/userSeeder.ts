@@ -27,6 +27,20 @@ async function userSeeder() {
     });
   }
 
+  // お試しユーザー作成
+  const hashedPasswordforTestUser1 = await bcrypt.hash("testUser1password", 10);
+
+  testUsers.push({
+    name: "testUser1",
+    userImg: faker.image.avatar(),
+    email: "testuser1@example.com",
+    emailVerifiedAt: faker.date.past(),
+    password: hashedPasswordforTestUser1, //bcryptを利用してテストパスワード"password"をハッシュか
+    isAdmin: false,
+    introduction: generatePostText(255),
+    fakeFlag: true,
+  });
+
   console.log({ testUsers });
   try {
     await prisma.user.createMany({ data: testUsers, skipDuplicates: true });
