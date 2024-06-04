@@ -20,13 +20,7 @@ declare module "socket.io/dist" {
 const PORT = process.env.PORT || 8000;
 const app = express();
 
-const corsOptions = {
-  origin: "https://karukan-practice.site", // 許可するオリジン
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  allowedHeaders: "Content-Type,Authorization",
-};
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 app.use(helmet());
