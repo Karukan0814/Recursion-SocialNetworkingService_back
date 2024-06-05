@@ -33,7 +33,7 @@ async function userSeeder() {
   testUsers.push({
     name: "testUser1",
     userImg: faker.image.avatar(),
-    email: "testuser1@example.com",
+    email: "testuser1@gmail.com",
     emailVerifiedAt: faker.date.past(),
     password: hashedPasswordforTestUser1, //bcryptを利用してテストパスワード"password"をハッシュか
     isAdmin: false,
