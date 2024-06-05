@@ -13,6 +13,10 @@ RUN npm install
 # Prismaクライアントを生成
 RUN npx prisma generate
 
+
+# ffmpegをインストール
+RUN apk update && apk add ffmpeg
+
 # ソースコードをコピー
 COPY . .
 
