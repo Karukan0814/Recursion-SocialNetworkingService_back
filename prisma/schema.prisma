@@ -16,6 +16,15 @@ datasource db {
 }
 
 
+//ER図の自動生成用
+generator erd {
+  provider = "prisma-erd-generator"
+  theme = "forest"
+  output = "ERD.md"
+  includeRelationFromFields = true
+}
+
+
 model User {
   id      Int      @id @default(autoincrement())
   name String @db.VarChar(25)
