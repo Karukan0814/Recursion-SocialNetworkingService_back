@@ -175,7 +175,7 @@ export async function compressVideo(video: Express.Multer.File) {
 
   // FFmpegを使用して動画を圧縮
   await execAsync(
-    `ffmpeg -i ${tempInPath} -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2'" -b:v 500k -c:a copy ${tempOutPath}`
+    `ffmpeg -i ${tempInPath} -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2'" -b:v 500k -c:a copy ${tempOutPath} > ffmpeg.log 2>&1`
   );
   // 圧縮された動画ファイルを読み込む
   const compressedVideo = fs.readFileSync(tempOutPath);
