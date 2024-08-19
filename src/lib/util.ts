@@ -188,8 +188,16 @@ export async function compressVideo(video: Express.Multer.File) {
 }
 
 export async function getUnreadNotificationsCount(userId: number) {
+  const backDate: number = 7 * 24 * 3600 * 1000;
+
+  const toDate = new Date();
+  const fromDate = new Date(toDate.getTime() - backDate); // 何日前までさかのぼるか
   const unreadNotificationCount = await prisma.notification.count({
     where: {
+      createdAt: {
+        gte: fromDate,
+        lt: toDate,
+      },
       read: false,
       userId,
     },
